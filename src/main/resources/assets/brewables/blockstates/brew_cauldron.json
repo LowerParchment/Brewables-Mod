@@ -1,0 +1,19 @@
+{
+    "variants": {
+        "color=clear": {
+            "model": "brewables:block/brew_cauldron_clear"
+        },
+        "color=blue": {
+            "model": "brewables:block/brew_cauldron_blue"
+        },
+        "color=red": {
+            "model": "brewables:block/brew_cauldron_red"
+        },
+        "color=brown": {
+            "model": "brewables:block/brew_cauldron_brown"
+        },
+        "color=black": {
+            "model": "brewables:block/brew_cauldron_black"
+        }
+    }
+}

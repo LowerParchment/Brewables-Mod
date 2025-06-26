@@ -1,0 +1,10 @@
+{
+    "parent": "minecraft:block/template_cauldron_full",
+    "textures": {
+        "particle": "minecraft:block/water_still",
+        "top": "minecraft:block/water_still",
+        "side": "minecraft:block/cauldron_side",
+        "bottom": "minecraft:block/cauldron_bottom",
+        "overlay": "brewables:block/overlay/black"
+    }
+}

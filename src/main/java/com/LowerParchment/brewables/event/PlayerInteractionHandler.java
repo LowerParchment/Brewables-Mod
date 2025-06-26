@@ -1,6 +1,9 @@
 // Importing necessary packages for the event handler in Minecraft Forge modding.
 package com.LowerParchment.brewables.event;
 import com.LowerParchment.brewables.BrewablesMod;
+import com.LowerParchment.brewables.handler.BrewRecipeRegistry;
+import com.LowerParchment.brewables.handler.CauldronStateTracker;
+import com.LowerParchment.brewables.handler.ItemInCauldronHandler;
 
 // Import dependencies
 import net.minecraft.core.BlockPos;
@@ -11,6 +14,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -19,6 +23,7 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 // PlayerInteractionHandler class to handle player interactions with cauldrons
 @Mod.EventBusSubscriber(modid = BrewablesMod.MODID)
@@ -36,35 +41,39 @@ public class PlayerInteractionHandler
         Player player = event.getEntity();
         var level = event.getLevel();
 
-        // use immutable() to ensure thread safety
-        BlockPos pos = BlockPos.containing(event.getHitVec().getLocation()).immutable();
-
-        // DEBUG REMOVE LATER
+        // Get the position of the block that was clicked
+        BlockPos pos = event.getPos().immutable();
         var state = event.getLevel().getBlockState(pos);
         var block = state.getBlock();
-        System.out.println("🔍 Block at " + pos + ": " + block.getDescriptionId());
-        // DEBUG REMOVE LATER
 
         ItemStack heldItem = player.getItemInHand(InteractionHand.MAIN_HAND);
 
         // Check if the player is holding a stirring rod and if the block is a water cauldron
-        if (!heldItem.getItem().getDescriptionId().equals("item.brewables.stirring_rod")) {
+        if (!heldItem.getItem().getDescriptionId().equals("item.brewables.stirring_rod"))
+        {
             System.out.println("⚠️ Not holding stirring rod. Held: " + heldItem.getDescriptionId());
             return;
         }
 
-        // Check if the clicked block is a water cauldron
-        if (block != Blocks.WATER_CAULDRON) {
+        // Check if the clicked block isn't a water cauldron
+        if (block != BrewablesMod.BREW_CAULDRON.get())
+        {
             return;
         }
 
-        // DEBUG REMOVE LATER
-        System.out.println("🧪 Checking cauldron at " + pos);
-        System.out.println("📦 Known tracked cauldrons: " + ingredientsByCauldron.keySet());
-        // DEBUG REMOVE LATER
-
         // Check if the cauldron is empty or not. If it has items, display them.
+        CauldronBrewState brewState = CauldronStateTracker.getState(pos);
         List<ItemStack> ingredients = ingredientsByCauldron.getOrDefault(pos, new ArrayList<>());
+
+        // The cauldron is full of potion, or witch's wart, but you tried to stir it anyway
+        if (brewState == CauldronBrewState.BREW_READY || brewState == CauldronBrewState.FAILED)
+        {
+            
+            player.displayClientMessage(Component.literal("This cauldron is full of potion. Use a bottle!"), true);
+            return;
+        }
+
+        // The cauldron is empty and you tried to stir it
         if (ingredients.isEmpty())
         {
             player.displayClientMessage(Component.literal("Cauldron is empty."), true);
@@ -72,66 +81,58 @@ public class PlayerInteractionHandler
         }
         
         // Show ingredient list for feedback
-        player.displayClientMessage(Component.literal("🍲 Ingredients in this cauldron:"), false);
+        player.displayClientMessage(Component.literal("Ingredients in this cauldron:"), false);
         for (ItemStack stack : ingredients)
         {
             player.displayClientMessage(Component.literal("- " + stack.getCount() + "x " + stack.getDisplayName().getString()), false);
-        }
-
-        // DEBUG REMOVE LATER
-        System.out.println("🧪 Ingredient count at " + pos + ": " + ingredients.size());
-        // DEBUG REMOVE LATER
-        
-
-        // Check for specific ingredients to determine the outcome of the brewing
-        boolean hasNetherWart = false;
-        boolean hasBlazePowder = false;
-
-        // Loop through the ingredients to check for Nether Wart and Blaze Powder
-        for (ItemStack stack : ingredients) {
-            if (stack.is(Items.NETHER_WART)) hasNetherWart = true;
-            if (stack.is(Items.BLAZE_POWDER)) hasBlazePowder = true;
-        }
-
-        //DEBUG
-        System.out.println("🧪 Has Nether Wart? " + hasNetherWart);
-        System.out.println("🔥 Has Blaze Powder? " + hasBlazePowder);
-        //DEBUG
+        } 
 
         // Determine the outcome based on the ingredients
-        // If both Nether Wart and Blaze Powder are present, brew a custom potion
-        if (hasNetherWart && hasBlazePowder)
+        // You made a potion!
+        Optional<BrewRecipeRegistry.BrewResult> result = BrewRecipeRegistry.match(ingredients);
+        System.out.println("🔍 Matching ingredients at " + pos + ": " + ingredients);
+        if (result.isPresent())
         {
-            player.displayClientMessage(Component.literal("✨ Successful brew! You made a custom potion."), true);
+            // Log the successful brew match
+            System.out.println("✅ Brew match found: " + result.get().basePotion());
 
-            // Spawn potion
-            ItemStack potion = new ItemStack(net.minecraft.world.item.Items.POTION);
-            ItemEntity potionEntity = new ItemEntity(
-                level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
-                potion
-            );
-            potionEntity.setDeltaMovement(0, 0.2, 0);
-            level.addFreshEntity(potionEntity);
+            BrewRecipeRegistry.BrewResult brew = result.get();
+            player.displayClientMessage(Component.literal("Successful brew! You made a potion."), true);
+            
+            Potion finalPotion = result.get().basePotion();
+            boolean isStrong = result.get().useGlowstone();
+            boolean isLong = result.get().useRedstone();
+
+                // Brew is ready
+                CauldronStateTracker.setState(pos, CauldronBrewState.BREW_READY);
+                // 4 Doses of the potion
+                CauldronStateTracker.setDoses(pos, 4);
+                System.out.println("✅ Stirring completed at: " + pos);
+                System.out.println("✅ Doses set to: " + CauldronStateTracker.getDoses(pos));
+                // The potion result
+                CauldronStateTracker.setResult(pos, brew);
+                // TODO: Visual color update here
         }
         // You brewed a Witch's Wart potion
         else
         {
-            player.displayClientMessage(Component.literal("💀 Witch’s Wart brewed. That can't be right..."), true);
-
-            // Spawn Witch’s Wart (placeholder: fermented spider eye)
-            ItemStack wart = new ItemStack(net.minecraft.world.item.Items.FERMENTED_SPIDER_EYE);
-            ItemEntity wartEntity = new ItemEntity(
-                level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
-                wart
-            );
-            level.addFreshEntity(wartEntity);
+            player.displayClientMessage(Component.literal("Witch’s Wart brewed. That can't be right..."), true);
+            CauldronStateTracker.setState(pos, CauldronBrewState.FAILED);
+            CauldronStateTracker.setDoses(pos, 4);
         }
 
         // Cancel the event to prevent default interaction behavior
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
 
-        // Clear ingredients from the cauldron
-        ingredientsByCauldron.remove(pos);
+        // Clear ingredients from the cauldron after a tick has passed, otherwise it will be cleared immediately and the player won't see the potion spawn.
+        if (!level.isClientSide)
+        {
+            level.getServer().execute(() ->
+            {
+                ingredientsByCauldron.remove(pos);
+                BrewablesMod.LOGGER.info("🧹 Cleared ingredients from {}", pos);
+            });
+        }
     }
 }
