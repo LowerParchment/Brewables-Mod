@@ -1,6 +1,9 @@
+// Import self-created package declaration
 package com.LowerParchment.brewables;
-
 import com.LowerParchment.brewables.item.StirringRodItem;
+import com.LowerParchment.brewables.event.ItemInCauldronHandler;
+import com.LowerParchment.brewables.event.PlayerInteractionHandler;
+// Import dependencies and classes
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -25,8 +28,10 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 
+// BrewablesMod class definition
 @Mod(BrewablesMod.MODID)
-public class BrewablesMod {
+public class BrewablesMod{
+    // Mod ID and logger
     public static final String MODID = "brewables";
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -52,6 +57,7 @@ public class BrewablesMod {
                         output.accept(STIRRING_ROD.get());
                     }).build());
 
+    // Constructor to initialize the mod
     public BrewablesMod(){
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         ITEMS.register(modEventBus);
@@ -59,25 +65,27 @@ public class BrewablesMod {
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addToCreativeTab);
-
-        MinecraftForge.EVENT_BUS.register(this);
     }
 
+    // Common setup method for the mod
     private void commonSetup(final FMLCommonSetupEvent event) {
         LOGGER.info("Brewables Mod Loaded!");
     }
 
+    // Method to add items to the Brewables creative tab
     private void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTab() == BREWABLES_TAB.get()) {
             event.accept(STIRRING_ROD.get());
         }
     }
 
+    // Event handler for server starting
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         LOGGER.info("Server is starting up with Brewables loaded.");
     }
 
+    // Client-side setup for the mod
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
         @SubscribeEvent
