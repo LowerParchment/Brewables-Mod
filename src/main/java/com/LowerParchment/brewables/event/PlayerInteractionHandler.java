@@ -1,6 +1,8 @@
 // Importing necessary packages for the event handler in Minecraft Forge modding.
 package com.LowerParchment.brewables.event;
 import com.LowerParchment.brewables.BrewablesMod;
+import com.LowerParchment.brewables.block.BrewCauldronBlock;
+import com.LowerParchment.brewables.block.BrewColorType;
 import com.LowerParchment.brewables.handler.BrewRecipeRegistry;
 import com.LowerParchment.brewables.handler.CauldronStateTracker;
 import com.LowerParchment.brewables.handler.ItemInCauldronHandler;
@@ -16,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -37,7 +40,7 @@ public class PlayerInteractionHandler
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event)
     {
-        System.out.println("🎯 RightClickBlock triggered!");
+        System.out.println("RightClickBlock triggered!");
         Player player = event.getEntity();
         var level = event.getLevel();
 
@@ -48,10 +51,38 @@ public class PlayerInteractionHandler
 
         ItemStack heldItem = player.getItemInHand(InteractionHand.MAIN_HAND);
 
+        // Allow refilling the cauldron with a water bucket
+        if (heldItem.is(Items.WATER_BUCKET) && block == BrewablesMod.BREW_CAULDRON.get())
+        {
+            // If the cauldron is empty
+            if (state.getValue(com.LowerParchment.brewables.block.BrewCauldronBlock.LEVEL) == 0)
+            {
+                // Refill water level and reset tint
+                level.setBlock(pos, state
+                    .setValue(com.LowerParchment.brewables.block.BrewCauldronBlock.LEVEL, 3)
+                    .setValue(com.LowerParchment.brewables.block.BrewCauldronBlock.COLOR, com.LowerParchment.brewables.block.BrewColorType.CLEAR), 3);
+
+                // Reset the brew state
+                CauldronStateTracker.setState(pos, CauldronBrewState.EMPTY);
+                CauldronStateTracker.setDoses(pos, 0);
+
+                // Swap bucket for empty one
+                if (!player.isCreative()) {
+                    heldItem.shrink(1);
+                    player.getInventory().add(new ItemStack(Items.BUCKET));
+                }
+
+                player.displayClientMessage(Component.literal("You refilled the cauldron with water."), true);
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+                return;
+            }
+        }
+
         // Check if the player is holding a stirring rod and if the block is a water cauldron
         if (!heldItem.getItem().getDescriptionId().equals("item.brewables.stirring_rod"))
         {
-            System.out.println("⚠️ Not holding stirring rod. Held: " + heldItem.getDescriptionId());
+            System.out.println("Not holding stirring rod. Held: " + heldItem.getDescriptionId());
             return;
         }
 
@@ -90,11 +121,11 @@ public class PlayerInteractionHandler
         // Determine the outcome based on the ingredients
         // You made a potion!
         Optional<BrewRecipeRegistry.BrewResult> result = BrewRecipeRegistry.match(ingredients);
-        System.out.println("🔍 Matching ingredients at " + pos + ": " + ingredients);
+        System.out.println("Matching ingredients at " + pos + ": " + ingredients);
         if (result.isPresent())
         {
             // Log the successful brew match
-            System.out.println("✅ Brew match found: " + result.get().basePotion());
+            System.out.println("Brew match found: " + result.get().basePotion());
 
             BrewRecipeRegistry.BrewResult brew = result.get();
             player.displayClientMessage(Component.literal("Successful brew! You made a potion."), true);
@@ -105,10 +136,17 @@ public class PlayerInteractionHandler
 
                 // Brew is ready
                 CauldronStateTracker.setState(pos, CauldronBrewState.BREW_READY);
-                // 4 Doses of the potion
-                CauldronStateTracker.setDoses(pos, 4);
-                System.out.println("✅ Stirring completed at: " + pos);
-                System.out.println("✅ Doses set to: " + CauldronStateTracker.getDoses(pos));
+                // 3 Doses of the potion
+                CauldronStateTracker.setDoses(pos, 3);
+                System.out.println("Stirring completed at: " + pos);
+                System.out.println("Doses set to: " + CauldronStateTracker.getDoses(pos));
+
+                // Set block state to show full cauldron with brown color
+                BlockState updatedState = level.getBlockState(pos)
+                    .setValue(BrewCauldronBlock.COLOR, BrewColorType.BROWN)
+                    .setValue(BrewCauldronBlock.LEVEL, 3);
+                level.setBlockAndUpdate(pos, updatedState);
+
                 // The potion result
                 CauldronStateTracker.setResult(pos, brew);
                 // TODO: Visual color update here
@@ -118,7 +156,7 @@ public class PlayerInteractionHandler
         {
             player.displayClientMessage(Component.literal("Witch’s Wart brewed. That can't be right..."), true);
             CauldronStateTracker.setState(pos, CauldronBrewState.FAILED);
-            CauldronStateTracker.setDoses(pos, 4);
+            CauldronStateTracker.setDoses(pos, 3);
         }
 
         // Cancel the event to prevent default interaction behavior
@@ -131,7 +169,7 @@ public class PlayerInteractionHandler
             level.getServer().execute(() ->
             {
                 ingredientsByCauldron.remove(pos);
-                BrewablesMod.LOGGER.info("🧹 Cleared ingredients from {}", pos);
+                BrewablesMod.LOGGER.info("Cleared ingredients from {}", pos);
             });
         }
     }

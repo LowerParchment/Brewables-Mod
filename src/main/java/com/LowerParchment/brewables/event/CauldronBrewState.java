@@ -5,7 +5,7 @@ package com.LowerParchment.brewables.event;
 public enum CauldronBrewState
 {
     EMPTY,
-    INGREDIENTS_ADDED,
+    BASE_READY,
     BREW_READY,
     FAILED
 }

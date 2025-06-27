@@ -57,7 +57,7 @@ public class CauldronStateTracker
         pos = pos.immutable();
         int before = getDoses(pos);
         int after = Math.max(0, before - 1);
-        System.out.println("📉 decrementDoses called at " + pos + " | Before: " + before + " → After: " + after);
+        System.out.println("decrementDoses called at " + pos + " | Before: " + before + " → After: " + after);
         doseCounts.put(pos, after);
     }
 

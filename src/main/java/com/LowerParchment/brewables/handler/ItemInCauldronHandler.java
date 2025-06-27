@@ -1,14 +1,18 @@
 // Importing necessary packages for the event handler in Minecraft Forge modding.
 package com.LowerParchment.brewables.handler;
 import com.LowerParchment.brewables.BrewablesMod;
+import com.LowerParchment.brewables.block.BrewCauldronBlock;
+import com.LowerParchment.brewables.block.BrewColorType;
 import com.LowerParchment.brewables.event.CauldronBrewState;
 import com.LowerParchment.brewables.handler.CauldronStateTracker;
 
 import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CauldronBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.TickEvent;
@@ -33,6 +37,7 @@ public class ItemInCauldronHandler
     public static void clearIngredients(BlockPos pos) {
         ingredientsByCauldron.remove(pos.immutable());
     }
+    
     // This method is called on every world tick to check for items in water cauldrons.
     @SubscribeEvent
     public static void onWorldTick(TickEvent.LevelTickEvent event)
@@ -53,8 +58,15 @@ public class ItemInCauldronHandler
             for (ItemEntity item : event.level.getEntitiesOfClass(ItemEntity.class, searchBox))
             {
                 BlockPos cauldronPos = BlockPos.containing(item.position().x, item.position().y - 0.1, item.position().z).immutable();
-                System.out.println("📍 Item landed over BlockPos: " + cauldronPos);
+                System.out.println("Item landed over BlockPos: " + cauldronPos);
                 BlockState state = level.getBlockState(cauldronPos);
+
+                // Make sure that the cauldron has water in it
+                if (!state.hasProperty(BrewCauldronBlock.LEVEL) || state.getValue(BrewCauldronBlock.LEVEL) == 0)
+                {
+                    System.out.println("Cauldron at " + cauldronPos + " is dry — ignoring thrown item.");
+                    continue;
+                }
         
                 // Check to see if the item is in a water cauldron
                 if (state.getBlock() == BrewablesMod.BREW_CAULDRON.get())
@@ -62,9 +74,44 @@ public class ItemInCauldronHandler
                     // Get the current state of the cauldron at this position and check if it is
                     // ready for new ingredients
                     CauldronBrewState currentState = CauldronStateTracker.getState(cauldronPos);
-                    if (currentState == CauldronBrewState.BREW_READY || currentState == CauldronBrewState.FAILED)
+                    ItemStack itemStack = item.getItem();
+
+                    // Special case: Nether Wart can move the state from EMPTY → BASE_READY
+                    if (itemStack.getItem() == Items.NETHER_WART)
                     {
-                        return; // Don't accept new ingredients after brewing is done
+                        // If the player inserted nethwart, check if the cauldron is empty
+                        if (currentState == CauldronBrewState.EMPTY)
+                        {
+                            // Set cauldron state to BASE_READY
+                            CauldronStateTracker.setState(cauldronPos, CauldronBrewState.BASE_READY);
+                            System.out.println("Cauldron at " + cauldronPos + " is now BASE_READY with Nether Wart!");
+
+                            // Visually set it to brown for readiness
+                            BlockState newState = state.setValue(BrewCauldronBlock.COLOR, BrewColorType.BROWN); // or RED
+                            level.setBlock(cauldronPos, newState, 3);
+
+                            // Update the level to reflect the new state
+                            level.sendBlockUpdated(cauldronPos, state, newState, 3);
+
+                            // Discard the Nether Wart item
+                            item.discard();
+                            continue;
+                        }
+                        else
+                        {
+                            System.out.println("Nether Wart rejected — cauldron not empty.");
+                        
+                            // If the cauldron is not empty, discard the Nether Wart
+                            item.discard();
+                            continue;
+                        }
+                    }
+
+                    // For all other items, only accept if we're already in BASE_READY state
+                    if (currentState != CauldronBrewState.BASE_READY)
+                    {
+                        System.out.println("Cauldron not ready — item ignored: " + item.getItem().getDisplayName().getString());
+                        continue;
                     }
 
                     // Log for debugging
@@ -80,16 +127,45 @@ public class ItemInCauldronHandler
                     // Log the item entity found near the player for debugging
                     System.out.println("🧪 Item near player in water cauldron: " + item.getItem().getDisplayName().getString());
 
+                    // Begin the brewing process if the cauldron is filled with water, but not yet ready for brewing
+                    if (itemStack.getItem() == Items.NETHER_WART)
+                    {
+                        // If the item is Nether Wart, check if the cauldron is empty
+                        if (currentState == CauldronBrewState.EMPTY)
+                        {
+                            // Set cauldron state to BASE_READY
+                            CauldronStateTracker.setState(cauldronPos, CauldronBrewState.BASE_READY);
+
+                            // Log update
+                            System.out.println("Cauldron at " + cauldronPos + " is now BASE_READY with Nether Wart!");
+
+                            // Optional: Force block update if needed for tinting logic
+                            level.sendBlockUpdated(cauldronPos, state, state, 3);
+
+                            // Discard the Nether Wart item
+                            item.discard();
+
+                            // Skip the rest of the ingredient handling logic
+                            continue;
+                        }
+                        else
+                        {
+                            System.out.println("Nether Wart rejected — cauldron not empty.");
+                            item.discard();
+                            continue;
+                        }
+                    }
+
                     // Add the item to the cauldron's ingredient list
                     ingredientsByCauldron.putIfAbsent(cauldronPos, new ArrayList<>());
                     ingredientsByCauldron.get(cauldronPos).add(item.getItem().copy());
 
                     // Log the ingredient added to the cauldron
-                    System.out.println("📝 Ingredient added to cauldron at " + cauldronPos + ": " +
+                    System.out.println("Ingredient added to cauldron at " + cauldronPos + ": " +
                         item.getItem().getDisplayName().getString());
                     
                     // Optional debugging output
-                    System.out.println("🍲 Current ingredients in " + cauldronPos + ":");
+                    System.out.println("Current ingredients in " + cauldronPos + ":");
                     for (ItemStack stack : ingredientsByCauldron.get(cauldronPos))
                     {
                         System.out.println("- " + stack.getCount() + "x " + stack.getDisplayName().getString());

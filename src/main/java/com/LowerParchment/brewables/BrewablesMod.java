@@ -19,6 +19,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -77,6 +80,9 @@ public class BrewablesMod
                         output.accept(STIRRING_ROD.get());
                         output.accept(BREW_CAULDRON_ITEM.get());
                     }).build());
+
+    // Integer property for the water level of the cauldron
+    public static final IntegerProperty LEVEL = IntegerProperty.create("level", 0, 3);
 
     // Constructor to initialize the mod
     public BrewablesMod()

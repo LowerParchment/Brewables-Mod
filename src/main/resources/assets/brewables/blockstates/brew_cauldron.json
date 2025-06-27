@@ -1,19 +1,12 @@
 {
-    "variants": {
-        "color=clear": {
-            "model": "brewables:block/brew_cauldron_clear"
-        },
-        "color=blue": {
-            "model": "brewables:block/brew_cauldron_blue"
-        },
-        "color=red": {
-            "model": "brewables:block/brew_cauldron_red"
-        },
-        "color=brown": {
-            "model": "brewables:block/brew_cauldron_brown"
-        },
-        "color=black": {
-            "model": "brewables:block/brew_cauldron_black"
-        }
+    "variants": 
+    {
+        "color=clear,level=1": { "model": "brewables:block/brew_cauldron_clear_1" },
+        "color=clear,level=2": { "model": "brewables:block/brew_cauldron_clear_2" },
+        "color=clear,level=3": { "model": "brewables:block/brew_cauldron_clear_3" },
+        "color=blue": {"model": "brewables:block/brew_cauldron_blue"},
+        "color=red": {"model": "brewables:block/brew_cauldron_red"},
+        "color=brown": {"model": "brewables:block/brew_cauldron_brown"},
+        "color=black": {"model": "brewables:block/brew_cauldron_black"}
     }
 }
