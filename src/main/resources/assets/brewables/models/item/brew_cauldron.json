@@ -1,3 +1,6 @@
 {
-    "parent": "brewables:block/brew_cauldron_clear"
+    "parent": "item/handheld",
+    "textures": {
+        "layer0": "brewables:item/brew_cauldron"
+    }
 }
