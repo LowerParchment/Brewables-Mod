@@ -141,11 +141,11 @@ public class PlayerInteractionHandler
                 System.out.println("Stirring completed at: " + pos);
                 System.out.println("Doses set to: " + CauldronStateTracker.getDoses(pos));
 
-                // Set block state to show full cauldron with brown color
-                BlockState updatedState = level.getBlockState(pos)
-                    .setValue(BrewCauldronBlock.COLOR, BrewColorType.BROWN)
-                    .setValue(BrewCauldronBlock.LEVEL, 3);
-                level.setBlockAndUpdate(pos, updatedState);
+                // // Set block state to show full cauldron with brown color
+                // BlockState updatedState = level.getBlockState(pos)
+                //     .setValue(BrewCauldronBlock.COLOR, BrewColorType.BROWN)
+                //     .setValue(BrewCauldronBlock.LEVEL, 3);
+                // level.setBlockAndUpdate(pos, updatedState);
 
                 // The potion result
                 CauldronStateTracker.setResult(pos, brew);

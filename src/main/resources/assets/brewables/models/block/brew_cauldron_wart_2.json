@@ -1,9 +1,9 @@
 {
-  "parent": "minecraft:block/template_cauldron_level1",
+  "parent": "minecraft:block/template_cauldron_level2",
   "textures": {
     "particle": "brewables:block/water_still",
     "top": "minecraft:block/cauldron_top",
-    "content": "brewables:block/netherwart_still",
+    "content": "brewables:block/witchs_wart_still",
     "side": "minecraft:block/cauldron_side",
     "bottom": "minecraft:block/cauldron_bottom",
     "overlay": "brewables:block/overlay/clear"
