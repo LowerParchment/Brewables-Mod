@@ -9,6 +9,8 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.*;
 
+import com.LowerParchment.brewables.block.BrewColorType;
+
 public class BrewRecipeRegistry
 {
     // Establish the BrewResult record
@@ -35,6 +37,30 @@ public class BrewRecipeRegistry
         RECIPE_MAP.put(List.of(Items.TURTLE_HELMET), Potions.TURTLE_MASTER);
         RECIPE_MAP.put(List.of(Items.PHANTOM_MEMBRANE), Potions.SLOW_FALLING);
         RECIPE_MAP.put(List.of(Items.FERMENTED_SPIDER_EYE), Potions.WEAKNESS);
+    }
+
+    // Method to get the BrewColorType based on the potion type from above
+    public static BrewColorType getColorForPotion(Potion potion)
+    {
+        if (potion == Potions.SWIFTNESS) return BrewColorType.SWIFTNESS;
+        if (potion == Potions.SLOWNESS) return BrewColorType.SLOWNESS;
+        if (potion == Potions.LEAPING) return BrewColorType.LEAPING;
+        if (potion == Potions.STRENGTH) return BrewColorType.STRENGTH;
+        if (potion == Potions.HEALING) return BrewColorType.HEALING;
+        if (potion == Potions.HARMING) return BrewColorType.HARMING;
+        if (potion == Potions.POISON) return BrewColorType.POISON;
+        if (potion == Potions.REGENERATION) return BrewColorType.REGENERATION;
+        if (potion == Potions.FIRE_RESISTANCE) return BrewColorType.FIRE_RESISTANCE;
+        if (potion == Potions.WATER_BREATHING) return BrewColorType.WATER_BREATHING;
+        if (potion == Potions.NIGHT_VISION) return BrewColorType.NIGHT_VISION;
+        if (potion == Potions.INVISIBILITY) return BrewColorType.INVISIBILITY;
+        if (potion == Potions.TURTLE_MASTER) return BrewColorType.TURTLE_MASTER;
+        if (potion == Potions.SLOW_FALLING) return BrewColorType.SLOW_FALLING;
+        if (potion == Potions.WEAKNESS) return BrewColorType.WEAKNESS;
+
+        // Default fallback
+        System.out.println("[WARN] Unmapped potion in getColorForPotion: " + potion);
+        return BrewColorType.WART;
     }
 
     // Method to increase effect duration or effectiveness

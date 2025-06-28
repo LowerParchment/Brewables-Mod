@@ -10,7 +10,6 @@ import net.minecraft.core.BlockPos;
 // This class tracks the state of cauldrons in the game, including their brew states and remaining doses.
 public class CauldronStateTracker
 {
-
     private static final Map<BlockPos, CauldronBrewState> brewStates = new HashMap<>();
     private static final Map<BlockPos, Integer> doseCounts = new HashMap<>();
 
@@ -67,8 +66,6 @@ public class CauldronStateTracker
         pos = pos.immutable();
         return getDoses(pos) <= 0;
     }
-
-
 
     // Record to hold the result of a brewing process
     private static final Map<BlockPos, BrewResult> brewResults = new HashMap<>();

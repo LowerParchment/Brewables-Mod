@@ -4,10 +4,14 @@ import com.LowerParchment.brewables.BrewablesMod;
 import com.LowerParchment.brewables.block.BrewCauldronBlock;
 import com.LowerParchment.brewables.block.BrewColorType;
 import com.LowerParchment.brewables.event.CauldronBrewState;
+import com.LowerParchment.brewables.handler.BrewRecipeRegistry.BrewResult;
 import com.LowerParchment.brewables.handler.CauldronStateTracker;
 
 import java.util.*;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
@@ -87,11 +91,15 @@ public class ItemInCauldronHandler
                             System.out.println("Cauldron at " + cauldronPos + " is now BASE_READY with Nether Wart!");
 
                             // Visually set it to brown for readiness
-                            BlockState newState = state.setValue(BrewCauldronBlock.COLOR, BrewColorType.BROWN); // or RED
+                            BlockState newState = state
+                                .setValue(BrewCauldronBlock.LEVEL, state.getValue(BrewCauldronBlock.LEVEL)) // preserve level
+                                .setValue(BrewCauldronBlock.COLOR, BrewColorType.BROWN)
+                                .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.BASE_READY);
                             level.setBlock(cauldronPos, newState, 3);
 
-                            // Update the level to reflect the new state
-                            level.sendBlockUpdated(cauldronPos, state, newState, 3);
+                            // Ensure doses match cauldron's fill level when starting nether wart brew
+                            int startingLevel = state.getValue(BrewCauldronBlock.LEVEL);
+                            CauldronStateTracker.setDoses(cauldronPos, startingLevel);
 
                             // Discard the Nether Wart item
                             item.discard();
@@ -127,38 +135,82 @@ public class ItemInCauldronHandler
                     // Log the item entity found near the player for debugging
                     System.out.println("🧪 Item near player in water cauldron: " + item.getItem().getDisplayName().getString());
 
-                    // Begin the brewing process if the cauldron is filled with water, but not yet ready for brewing
-                    if (itemStack.getItem() == Items.NETHER_WART)
+                    // // Begin the brewing process if the cauldron is filled with water, but not yet ready for brewing
+                    // if (itemStack.getItem() == Items.NETHER_WART)
+                    // {
+                    //     // If the item is Nether Wart, check if the cauldron is empty
+                    //     if (currentState == CauldronBrewState.EMPTY)
+                    //     {
+                    //         // Set cauldron state to BASE_READY
+                    //         CauldronStateTracker.setState(cauldronPos, CauldronBrewState.BASE_READY);
+
+                    //         // Log update
+                    //         System.out.println("Cauldron at " + cauldronPos + " is now BASE_READY with Nether Wart!");
+
+                    //         // Optional: Force block update if needed for tinting logic
+                    //         level.sendBlockUpdated(cauldronPos, state, state, 3);
+
+                    //         // Discard the Nether Wart item
+                    //         item.discard();
+
+                    //         // Skip the rest of the ingredient handling logic
+                    //         continue;
+                    //     }
+                    //     else
+                    //     {
+                    //         System.out.println("Nether Wart rejected — cauldron not empty.");
+                    //         item.discard();
+                    //         continue;
+                    //     }
+                    // }
+
+                    // Safely get or create the ingredient list
+                    List<ItemStack> ingredientList = ingredientsByCauldron.computeIfAbsent(cauldronPos, k -> new ArrayList<>());
+
+                    // Add the item
+                    ingredientList.add(item.getItem().copy());
+
+                    // Log contents safely
+                    System.out.println("Current ingredients in " + cauldronPos + ":");
+                    for (ItemStack stack : ingredientList)
                     {
-                        // If the item is Nether Wart, check if the cauldron is empty
-                        if (currentState == CauldronBrewState.EMPTY)
-                        {
-                            // Set cauldron state to BASE_READY
-                            CauldronStateTracker.setState(cauldronPos, CauldronBrewState.BASE_READY);
-
-                            // Log update
-                            System.out.println("Cauldron at " + cauldronPos + " is now BASE_READY with Nether Wart!");
-
-                            // Optional: Force block update if needed for tinting logic
-                            level.sendBlockUpdated(cauldronPos, state, state, 3);
-
-                            // Discard the Nether Wart item
-                            item.discard();
-
-                            // Skip the rest of the ingredient handling logic
-                            continue;
-                        }
-                        else
-                        {
-                            System.out.println("Nether Wart rejected — cauldron not empty.");
-                            item.discard();
-                            continue;
-                        }
+                        System.out.println("- " + stack.getCount() + "x " + stack.getDisplayName().getString());
                     }
 
-                    // Add the item to the cauldron's ingredient list
-                    ingredientsByCauldron.putIfAbsent(cauldronPos, new ArrayList<>());
-                    ingredientsByCauldron.get(cauldronPos).add(item.getItem().copy());
+                    // After adding the new item, check for a matching recipe
+                    Optional<BrewResult> match = BrewRecipeRegistry.match(ingredientList);
+
+                    // If a matching recipe is found, update the cauldron
+                    if (match.isPresent())
+                    {
+                        // Get the result of the brewing match and its color
+                        BrewResult result = match.get();
+                        BrewColorType color = BrewRecipeRegistry.getColorForPotion(result.basePotion());
+
+                        // Update cauldron blockstate: set color + BREW_READY
+                        BlockState newState = state
+                            .setValue(BrewCauldronBlock.LEVEL, 3) // start with full doses
+                            .setValue(BrewCauldronBlock.COLOR, color)
+                            .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.BREW_READY);
+                        level.setBlock(cauldronPos, newState, 3);
+
+                        // Update state tracker
+                        CauldronStateTracker.setState(cauldronPos, CauldronBrewState.BREW_READY);
+                        CauldronStateTracker.setResult(cauldronPos, result);
+                        CauldronStateTracker.setDoses(cauldronPos, 3);
+
+                        // Clear ingredients to reset for next brew
+                        clearIngredients(cauldronPos);
+
+                        // Feedback for audio and visual effects
+                        level.playSound(null, cauldronPos, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1.0F, 1.0F);
+                        level.addParticle(ParticleTypes.HAPPY_VILLAGER,
+                                        cauldronPos.getX() + 0.5, cauldronPos.getY() + 1.0, cauldronPos.getZ() + 0.5,
+                                        0.0, 0.1, 0.0);
+
+                        // Log the successful brew match
+                        System.out.println("Brew started at " + cauldronPos + " with potion: " + result.basePotion() + " color: " + color);
+                    }
 
                     // Log the ingredient added to the cauldron
                     System.out.println("Ingredient added to cauldron at " + cauldronPos + ": " +
@@ -166,7 +218,7 @@ public class ItemInCauldronHandler
                     
                     // Optional debugging output
                     System.out.println("Current ingredients in " + cauldronPos + ":");
-                    for (ItemStack stack : ingredientsByCauldron.get(cauldronPos))
+                    for (ItemStack stack : ingredientList)
                     {
                         System.out.println("- " + stack.getCount() + "x " + stack.getDisplayName().getString());
                     }

@@ -124,55 +124,33 @@ public class BottleInteractionHandler
         System.out.println("Doses before decrement: " + CauldronStateTracker.getDoses(pos));
         CauldronStateTracker.decrementDoses(pos);
 
-        // Update the visual fill level of the cauldron
+        // Get the remaining doses
         int dosesRemaining = CauldronStateTracker.getDoses(pos);
-        int newLevel = Math.max(1, dosesRemaining); // 1-3 only
+        int newLevel = Math.max(0, dosesRemaining); // 0-3 only
 
-        BlockState newState = state.setValue(BrewCauldronBlock.LEVEL, newLevel);
-        level.setBlock(pos, newState, 3);
-
-        // Update the cauldron level and color
-        int currentLevel = state.getValue(BrewCauldronBlock.LEVEL);
-        int updatedLevel = currentLevel - 1;
-
-        // If the level is above 0, update the level of the water until its depleted
-        if (updatedLevel >= 0)
+        // Prepare new state with updated brew_state and color
+        BlockState newState;
+        if (dosesRemaining > 0)
         {
-            state = state.setValue(BrewCauldronBlock.LEVEL, updatedLevel);
-            level.setBlock(pos, state, 3);
-
-            if (updatedLevel == 0)
-            {
-                CauldronStateTracker.reset(pos);
-                BlockState cleared = state
-                    .setValue(BrewCauldronBlock.LEVEL, 0)
-                    .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR);
-                level.setBlock(pos, cleared, 3);
-            }
+            // Still has doses → update level but keep current color & brew_state
+            newState = state
+                .setValue(BrewCauldronBlock.LEVEL, newLevel)
+                .setValue(BrewCauldronBlock.COLOR, state.getValue(BrewCauldronBlock.COLOR))
+                .setValue(BrewCauldronBlock.BREW_STATE, state.getValue(BrewCauldronBlock.BREW_STATE));
+            level.setBlock(pos, newState, 3);
         }
         else
         {
-            // Drain completely and reset state/tint
-            level.setBlock(pos, state
-                .setValue(BrewCauldronBlock.LEVEL, 0)
-                .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR), 3);
-
-            // Reset the cauldron state and clear ingredients
+            // Doses depleted → reset cauldron fully
             CauldronStateTracker.reset(pos);
-            System.out.println("Cauldron at " + pos + " is now fully empty.");
-        }
-
-        // If doses reach zero, reset the cauldron state
-        if (CauldronStateTracker.isEmpty(pos)) {
-            CauldronStateTracker.reset(pos);;
-
-            // Reset block to be empty visually as well
-            BlockState cleared = state.setValue(BrewCauldronBlock.LEVEL, 0)
-            .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR);
-            level.setBlock(pos, cleared, 3);
-
-            // For debug purposes:
-            System.out.println("Cauldron at " + pos + " has been reset after 4 potions.");
+        
+            newState = state
+                .setValue(BrewCauldronBlock.LEVEL, 0)
+                .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR)
+                .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.EMPTY);
+            level.setBlock(pos, newState, 3);
+        
+            System.out.println("Cauldron at " + pos + " fully emptied & reset.");
         }
 
         // Cancel the event to prevent default behavior of double right-clicking

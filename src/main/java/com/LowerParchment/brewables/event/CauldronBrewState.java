@@ -1,11 +1,28 @@
 // Importing necessary packages for the event handler in Minecraft Forge modding.
 package com.LowerParchment.brewables.event;
 
-// This enum defines the possible states of a cauldron brew process.
-public enum CauldronBrewState
+import net.minecraft.util.StringRepresentable;
+
+public enum CauldronBrewState implements StringRepresentable
 {
-    EMPTY,
-    BASE_READY,
-    BREW_READY,
-    FAILED
+    EMPTY("empty"),
+    BASE_READY("base_ready"),
+    BREW_READY("brew_ready"),
+    FAILED("failed");
+
+    private final String name;
+
+    CauldronBrewState(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getSerializedName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

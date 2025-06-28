@@ -15,7 +15,7 @@ public enum BrewColorType implements StringRepresentable
     HARMING("harming"),
     POISON("poison"),
     REGENERATION("regeneration"),
-    FIRE_RESIST("fire_resistance"),
+    FIRE_RESISTANCE("fire_resistance"),
     WATER_BREATHING("water_breathing"),
     NIGHT_VISION("night_vision"),
     INVISIBILITY("invisibility"),
