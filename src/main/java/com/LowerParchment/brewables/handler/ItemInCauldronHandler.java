@@ -211,6 +211,20 @@ public class ItemInCauldronHandler
                         // Log the successful brew match
                         System.out.println("Brew started at " + cauldronPos + " with potion: " + result.basePotion() + " color: " + color);
                     }
+                    else
+                    {
+                        // You made a witch's wart potion!
+                        BlockState failedState = state
+                            .setValue(BrewCauldronBlock.LEVEL, 3) // or current level
+                            .setValue(BrewCauldronBlock.COLOR, BrewColorType.WART)
+                            .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.FAILED);
+                        level.setBlock(cauldronPos, failedState, 3);
+
+                        // Update the state tracker
+                        CauldronStateTracker.setState(cauldronPos, CauldronBrewState.FAILED);
+                        CauldronStateTracker.setDoses(cauldronPos, 3);
+                        clearIngredients(cauldronPos);
+                    }
 
                     // Log the ingredient added to the cauldron
                     System.out.println("Ingredient added to cauldron at " + cauldronPos + ": " +
