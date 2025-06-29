@@ -12,6 +12,7 @@ public class CauldronStateTracker
 {
     private static final Map<BlockPos, CauldronBrewState> brewStates = new HashMap<>();
     private static final Map<BlockPos, Integer> doseCounts = new HashMap<>();
+    private static final Map<BlockPos, BrewResult> brewResults = new HashMap<>();
 
     // Get the current state of a cauldron
     public static CauldronBrewState getState(BlockPos pos)
@@ -20,19 +21,25 @@ public class CauldronStateTracker
         return brewStates.getOrDefault(pos, CauldronBrewState.EMPTY);
     }
 
+    // Get all tracked cauldron states
+    public static Map<BlockPos, CauldronBrewState> getAllTrackedStates() {
+        return brewStates;
+    }
+
     // Set the state of a cauldron
     public static void setState(BlockPos pos, CauldronBrewState state)
     {
+        System.out.println("[TRACKER SET] Setting state of " + pos + " to " + state);
         brewStates.put(pos.immutable(), state);
     }
 
     // Remove tracking for a cauldron (e.g., when drained or broken)
     public static void reset(BlockPos pos)
     {
-        pos = pos.immutable();
-        brewStates.put(pos, CauldronBrewState.EMPTY);
-        doseCounts.remove(pos);
-        brewResults.remove(pos);
+        BlockPos immutablePos = pos.immutable();
+        brewStates.remove(immutablePos);
+        doseCounts.remove(immutablePos);
+        brewResults.remove(immutablePos);
         ItemInCauldronHandler.clearIngredients(pos);
         System.out.println("Cauldron reset at " + pos);
     }
@@ -66,9 +73,6 @@ public class CauldronStateTracker
         pos = pos.immutable();
         return getDoses(pos) <= 0;
     }
-
-    // Record to hold the result of a brewing process
-    private static final Map<BlockPos, BrewResult> brewResults = new HashMap<>();
 
     //Set the result of a brewing process for a cauldron
     public static void setResult(BlockPos pos, BrewResult result)

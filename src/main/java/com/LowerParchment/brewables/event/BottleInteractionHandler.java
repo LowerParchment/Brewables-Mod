@@ -5,6 +5,7 @@ import com.LowerParchment.brewables.BrewablesMod;
 import com.LowerParchment.brewables.block.BrewCauldronBlock;
 import com.LowerParchment.brewables.block.BrewColorType;
 import com.LowerParchment.brewables.handler.CauldronStateTracker;
+import com.LowerParchment.brewables.handler.ItemInCauldronHandler;
 import com.LowerParchment.brewables.handler.BrewRecipeRegistry;
 
 import java.util.HashMap;
@@ -119,38 +120,45 @@ public class BottleInteractionHandler
             PotionUtils.setPotion(result, finalPotion);
         }
 
+        // Fetch updated blockstate to avoid stale overwrites
+        BlockState currentState = level.getBlockState(pos);
+
         // Decrement the dose count in the cauldron
         System.out.println("Bottle used at: " + pos);
         System.out.println("Doses before decrement: " + CauldronStateTracker.getDoses(pos));
         CauldronStateTracker.decrementDoses(pos);
 
-        // Get the remaining doses
+        // Get updated doses
         int dosesRemaining = CauldronStateTracker.getDoses(pos);
         int newLevel = Math.max(0, dosesRemaining); // 0-3 only
 
-        // Prepare new state with updated brew_state and color
-        BlockState newState;
-        if (dosesRemaining > 0)
+        // Always update block LEVEL immediately to reflect new doses
+        BlockState updatedState = currentState
+            .setValue(BrewCauldronBlock.LEVEL, newLevel)
+            .setValue(BrewCauldronBlock.COLOR, currentState.getValue(BrewCauldronBlock.COLOR))
+            .setValue(BrewCauldronBlock.BREW_STATE, currentState.getValue(BrewCauldronBlock.BREW_STATE));
+        level.setBlock(pos, updatedState, 3);
+        BrewablesMod.LOGGER.debug("[BLOCK UPDATE TRACE] LEVEL set to {} at {} in <method>", newLevel, pos);
+        level.sendBlockUpdated(pos, currentState, updatedState, 3);
+
+        System.out.println("[BLOCK UPDATE] LEVEL=" + newLevel);
+
+        // If doses hit 0, reset state tracker and block
+        if (dosesRemaining <= 0)
         {
-            // Still has doses → update level but keep current color & brew_state
-            newState = state
-                .setValue(BrewCauldronBlock.LEVEL, newLevel)
-                .setValue(BrewCauldronBlock.COLOR, state.getValue(BrewCauldronBlock.COLOR))
-                .setValue(BrewCauldronBlock.BREW_STATE, state.getValue(BrewCauldronBlock.BREW_STATE));
-            level.setBlock(pos, newState, 3);
-        }
-        else
-        {
-            // Doses depleted → reset cauldron fully
             CauldronStateTracker.reset(pos);
-        
-            newState = state
+
+            BlockState cleared = updatedState
                 .setValue(BrewCauldronBlock.LEVEL, 0)
                 .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR)
                 .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.EMPTY);
-            level.setBlock(pos, newState, 3);
-        
-            System.out.println("Cauldron at " + pos + " fully emptied & reset.");
+            level.setBlock(pos, cleared, 3);
+            BrewablesMod.LOGGER.debug("[BLOCK UPDATE TRACE] LEVEL set to {} at {} in <method>", newLevel, pos);
+
+            level.sendBlockUpdated(pos, updatedState, cleared, 3);
+            level.scheduleTick(pos, cleared.getBlock(), 1);
+
+            System.out.println("[FORCE RESET] Block at " + pos + " set to EMPTY after tracker reset.");
         }
 
         // Cancel the event to prevent default behavior of double right-clicking
@@ -161,5 +169,8 @@ public class BottleInteractionHandler
         heldItem.shrink(1);
         if (!player.getInventory().add(result))
             player.drop(result, false);
+
+        BlockState finalState = level.getBlockState(pos);
+        System.out.println("[DEBUG] Final LEVEL after bottle: " + finalState.getValue(BrewCauldronBlock.LEVEL));
     }
 }

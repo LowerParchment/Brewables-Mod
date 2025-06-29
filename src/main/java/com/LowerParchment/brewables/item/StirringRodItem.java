@@ -20,7 +20,7 @@ public class StirringRodItem extends Item {
 
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.SPEAR; // or UseAnim.BLOCK, UseAnim.BOW, etc.
+        return UseAnim.BLOCK; // or UseAnim.BLOCK, UseAnim.BOW, etc.
     }
 
     @Override

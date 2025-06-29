@@ -12,21 +12,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 // PlayerInteractionHandler class to handle player interactions with cauldrons
 @Mod.EventBusSubscriber(modid = BrewablesMod.MODID)
@@ -46,7 +41,7 @@ public class PlayerInteractionHandler
 
         // Get the position of the block that was clicked
         BlockPos pos = event.getPos().immutable();
-        var state = event.getLevel().getBlockState(pos);
+        BlockState state = level.getBlockState(pos);
         var block = state.getBlock();
 
         ItemStack heldItem = player.getItemInHand(InteractionHand.MAIN_HAND);
@@ -55,14 +50,17 @@ public class PlayerInteractionHandler
         if (heldItem.is(Items.WATER_BUCKET) && block == BrewablesMod.BREW_CAULDRON.get())
         {
             // If the cauldron is empty
-            if (state.getValue(com.LowerParchment.brewables.block.BrewCauldronBlock.LEVEL) == 0)
+            if (state.getValue(BrewCauldronBlock.LEVEL) == 0)
             {
+                BrewablesMod.LOGGER.debug("Refill triggered at {}: LEVEL will be set to {}", pos, level);
+
                 // Refill water level and reset tint
                 level.setBlock(pos, state
-                    .setValue(com.LowerParchment.brewables.block.BrewCauldronBlock.LEVEL, 3)
-                    .setValue(com.LowerParchment.brewables.block.BrewCauldronBlock.COLOR, com.LowerParchment.brewables.block.BrewColorType.CLEAR), 3);
+                        .setValue(BrewCauldronBlock.LEVEL, 3)
+                        .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR), 3);
+                BrewablesMod.LOGGER.debug("[REFILL] LEVEL set to {} at {}", 3, pos);
 
-                // Reset the brew state
+                // Reset the brew states
                 CauldronStateTracker.setState(pos, CauldronBrewState.EMPTY);
                 CauldronStateTracker.setDoses(pos, 0);
 
@@ -82,15 +80,12 @@ public class PlayerInteractionHandler
         // Check if the player is holding a stirring rod and if the block is a water cauldron
         if (!heldItem.getItem().getDescriptionId().equals("item.brewables.stirring_rod"))
         {
-            System.out.println("Not holding stirring rod. Held: " + heldItem.getDescriptionId());
+            player.displayClientMessage(Component.literal("I need to stir this first."), true);
             return;
         }
 
         // Check if the clicked block isn't a water cauldron
-        if (block != BrewablesMod.BREW_CAULDRON.get())
-        {
-            return;
-        }
+        if (block != BrewablesMod.BREW_CAULDRON.get()) return;
 
         // Check if the cauldron is empty or not. If it has items, display them.
         CauldronBrewState brewState = CauldronStateTracker.getState(pos);
@@ -122,41 +117,48 @@ public class PlayerInteractionHandler
         // You made a potion!
         Optional<BrewRecipeRegistry.BrewResult> result = BrewRecipeRegistry.match(ingredients);
         System.out.println("Matching ingredients at " + pos + ": " + ingredients);
+
+        // match potion doses to cauldron fill level
+        int currentLevel = state.getValue(BrewCauldronBlock.LEVEL);
+
         if (result.isPresent())
         {
-            // Log the successful brew match
-            System.out.println("Brew match found: " + result.get().basePotion());
-
             BrewRecipeRegistry.BrewResult brew = result.get();
             player.displayClientMessage(Component.literal("Successful brew! You made a potion."), true);
-            
-            Potion finalPotion = result.get().basePotion();
-            boolean isStrong = result.get().useGlowstone();
-            boolean isLong = result.get().useRedstone();
 
-                // Brew is ready
-                CauldronStateTracker.setState(pos, CauldronBrewState.BREW_READY);
-                // 3 Doses of the potion
-                CauldronStateTracker.setDoses(pos, 3);
-                System.out.println("Stirring completed at: " + pos);
-                System.out.println("Doses set to: " + CauldronStateTracker.getDoses(pos));
+            // Brew is ready, so set the potion and its properties
+            CauldronStateTracker.setState(pos, CauldronBrewState.BREW_READY);
+            CauldronStateTracker.setDoses(pos, currentLevel);
+            CauldronStateTracker.setResult(pos, brew);
 
-                // // Set block state to show full cauldron with brown color
-                // BlockState updatedState = level.getBlockState(pos)
-                //     .setValue(BrewCauldronBlock.COLOR, BrewColorType.BROWN)
-                //     .setValue(BrewCauldronBlock.LEVEL, 3);
-                // level.setBlockAndUpdate(pos, updatedState);
-
-                // The potion result
-                CauldronStateTracker.setResult(pos, brew);
-                // TODO: Visual color update here
+            // Update the block state
+            BlockState latest = level.getBlockState(pos);
+            BlockState brewedState = latest
+                .setValue(BrewCauldronBlock.LEVEL, currentLevel)
+                .setValue(BrewCauldronBlock.COLOR, BrewRecipeRegistry.getColorForPotion(brew.basePotion()))
+                .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.BREW_READY);
+            level.setBlock(pos, brewedState, 3);
+            level.sendBlockUpdated(pos, latest, brewedState, 3);
+            BrewablesMod.LOGGER.debug("[BLOCK UPDATE TRACE] LEVEL set to {} at {} in <method>", currentLevel, pos);
         }
         // You brewed a Witch's Wart potion
         else
         {
             player.displayClientMessage(Component.literal("Witch’s Wart brewed. That can't be right..."), true);
+            
+            // Wart brew is ready, so set the potion and it's disgusting properties
             CauldronStateTracker.setState(pos, CauldronBrewState.FAILED);
-            CauldronStateTracker.setDoses(pos, 3);
+            CauldronStateTracker.setDoses(pos, currentLevel);
+
+            // Update the block state
+            BlockState latest = level.getBlockState(pos);
+            BlockState wartState = latest
+                .setValue(BrewCauldronBlock.LEVEL, currentLevel)
+                .setValue(BrewCauldronBlock.COLOR, BrewColorType.WART)
+                .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.FAILED);
+            level.setBlock(pos, wartState, 3);
+            level.sendBlockUpdated(pos, latest, wartState, 3);
+            BrewablesMod.LOGGER.debug("[BLOCK UPDATE TRACE] LEVEL set to {} at {} in <method>", currentLevel, pos);
         }
 
         // Cancel the event to prevent default interaction behavior
