@@ -61,13 +61,13 @@ public class ItemInCauldronHandler
             for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, searchBox))
             {
                 BlockPos cauldronPos = BlockPos.containing(item.position().x, item.position().y - 0.1, item.position().z).immutable();
-                System.out.println("Item landed over BlockPos: " + cauldronPos);
+                BrewablesMod.LOGGER.debug("Item landed over BlockPos: " + cauldronPos);
                 BlockState state = level.getBlockState(cauldronPos);
 
                 // Make sure that the cauldron has water in it
                 if (!state.hasProperty(BrewCauldronBlock.LEVEL) || state.getValue(BrewCauldronBlock.LEVEL) == 0)
                 {
-                    System.out.println("Cauldron at " + cauldronPos + " is dry — ignoring thrown item.");
+                    BrewablesMod.LOGGER.debug("Cauldron at " + cauldronPos + " is dry - ignoring thrown item.");
                     continue;
                 }
         
@@ -82,6 +82,10 @@ public class ItemInCauldronHandler
                     // Special case: Nether Wart can move the state from EMPTY → BASE_READY
                     if (itemStack.getItem() == Items.NETHER_WART && currentState == CauldronBrewState.EMPTY)
                     {
+                        BrewablesMod.LOGGER.debug(
+                                "[ITEM HANDLER] Nether Wart triggered block update at {} with LEVEL={}", cauldronPos,
+                                state.getValue(BrewCauldronBlock.LEVEL));
+
                         // Set cauldron state to BASE_READY
                         CauldronStateTracker.setState(cauldronPos, CauldronBrewState.BASE_READY);
 
@@ -117,14 +121,6 @@ public class ItemInCauldronHandler
                     item.discard();
                 }
             }
-        }
-
-        // Debugging: Print all cauldron states and doses
-        for (Map.Entry<BlockPos, CauldronBrewState> entry : CauldronStateTracker.getAllTrackedStates().entrySet()) {
-            BlockPos pos = entry.getKey();
-            CauldronBrewState state = entry.getValue();
-            int doses = CauldronStateTracker.getDoses(pos);
-            System.out.println("[TICK DEBUG] Cauldron at " + pos + " | Tracker state: " + state + " | Doses: " + doses);
         }
     }
 }
