@@ -35,7 +35,7 @@ public class BrewCauldronBlock extends CauldronBlock
     protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder)
     {
         super.createBlockStateDefinition(builder);
-        builder.add(COLOR, LEVEL, BREW_STATE);
+        builder.add(LEVEL, COLOR, BREW_STATE);
     }
 
     @Override
@@ -65,5 +65,23 @@ public class BrewCauldronBlock extends CauldronBlock
             l.sendBlockUpdated(pos, state, state, 3);
         }
         return super.updateShape(state, dir, neighborState, level, pos, neighborPos);
+    }
+
+    public void tick(BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
+            net.minecraft.util.RandomSource random) {
+        if (level.isClientSide)
+            return; // only act server-side
+
+        BlockState cleared = BrewablesMod.BREW_CAULDRON.get().defaultBlockState()
+                .setValue(BrewCauldronBlock.LEVEL, 0)
+                .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR)
+                .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.EMPTY);
+
+        level.setBlock(pos, cleared, 3);
+
+        BrewablesMod.LOGGER.info("[SCHEDULED-RESET] Placed empty cauldron at {} LEVEL={} BREW_STATE={}", pos,
+                cleared.getValue(BrewCauldronBlock.LEVEL), cleared.getValue(BrewCauldronBlock.BREW_STATE));
+
+        level.sendBlockUpdated(pos, state, cleared, 3);
     }
 }
