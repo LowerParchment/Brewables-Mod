@@ -22,6 +22,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 
 // In this code, we check for item entities in the world and see if they are in a water cauldron.
 @Mod.EventBusSubscriber (modid = BrewablesMod.MODID)
@@ -60,14 +62,30 @@ public class ItemInCauldronHandler
             // This will check for items within a 6-block radius of the player.
             for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, searchBox))
             {
+                if (!item.isAlive()) continue;
+            
                 BlockPos cauldronPos = BlockPos.containing(item.position().x, item.position().y - 0.1, item.position().z).immutable();
-                BrewablesMod.LOGGER.debug("Item landed over BlockPos: " + cauldronPos);
                 BlockState state = level.getBlockState(cauldronPos);
+            
+                // Skip non-cauldrons immediately
+                if (state.getBlock() != BrewablesMod.BREW_CAULDRON.get())
+                {
+                    BrewablesMod.LOGGER.debug("[ITEM HANDLER] Skipping non-cauldrons at {}: block={}", cauldronPos,
+                        BuiltInRegistries.BLOCK.getKey(state.getBlock()));
+                    continue;
+                }
 
                 // Make sure that the cauldron has water in it
                 if (!state.hasProperty(BrewCauldronBlock.LEVEL) || state.getValue(BrewCauldronBlock.LEVEL) == 0)
                 {
-                    BrewablesMod.LOGGER.debug("Cauldron at " + cauldronPos + " is dry - ignoring thrown item.");
+                    ResourceLocation blockName = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+
+                    BrewablesMod.LOGGER.debug("[ITEM HANDLER] DRY CHECK at {}: block={}, LEVEL property? {}, LEVEL={}",
+                        cauldronPos,
+                        blockName,
+                        state.hasProperty(BrewCauldronBlock.LEVEL),
+                        state.hasProperty(BrewCauldronBlock.LEVEL) ? state.getValue(BrewCauldronBlock.LEVEL) : "N/A"
+                    );
                     continue;
                 }
         
@@ -79,8 +97,23 @@ public class ItemInCauldronHandler
                     CauldronBrewState currentState = CauldronStateTracker.getState(cauldronPos);
                     ItemStack itemStack = item.getItem();
 
+                    // NEW EARLY EXIT: if the cauldron state is EMPTY, and LEVEL=0, skip entirely
+                    if (currentState == CauldronBrewState.EMPTY && state.getValue(BrewCauldronBlock.LEVEL) == 0)
+                    {
+                        continue;
+                    }
+
+                    // Cleanup: if cauldron state is EMPTY but ingredients still exist, clear them
+                    if (currentState == CauldronBrewState.EMPTY && ingredientsByCauldron.containsKey(cauldronPos))
+                    {
+                        BrewablesMod.LOGGER.debug("[ITEM HANDLER] Clearing stale ingredients at {} since cauldron reset to EMPTY.", cauldronPos);
+                        clearIngredients(cauldronPos);
+                    }
+
                     // Special case: Nether Wart can move the state from EMPTY → BASE_READY
-                    if (itemStack.getItem() == Items.NETHER_WART && currentState == CauldronBrewState.EMPTY)
+                    if (itemStack.getItem() == Items.NETHER_WART
+                        && currentState == CauldronBrewState.EMPTY
+                        && state.getValue(BrewCauldronBlock.LEVEL) > 0)
                     {
                         BrewablesMod.LOGGER.debug(
                                 "[ITEM HANDLER] Nether Wart triggered block update at {} with LEVEL={}", cauldronPos,

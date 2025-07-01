@@ -23,6 +23,7 @@ import net.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -127,6 +128,13 @@ public class RightClickHandler
                     event.setCanceled(true);
                     event.setCancellationResult(InteractionResult.SUCCESS);
                 }
+                else
+                {
+                    // Prevent vanilla behavior replacing the block
+                    player.displayClientMessage(Component.literal("[Water Bucket] The cauldron is already filled."), true);
+                    event.setCanceled(true);
+                    event.setCancellationResult(InteractionResult.SUCCESS);
+                }
 
                 // Case Finished
                 break;
@@ -135,6 +143,16 @@ public class RightClickHandler
             // Handle filling a bottle from the cauldron
             case "BOTTLE":
             {
+                // Get cauldron brew state early
+                CauldronBrewState brewState = CauldronStateTracker.getState(pos);
+
+                // Early exit: skip if cauldron isn't BREW_READY or FAILED (i.e., EMPTY or in-progress)
+                if (brewState != CauldronBrewState.BREW_READY && brewState != CauldronBrewState.FAILED)
+                {
+                    BrewablesMod.LOGGER.debug("[BOTTLE] Skipping: cauldron not in BREW_READY or FAILED state at {}", pos);
+                    break;
+                }
+
                 // Prevent rapid double-triggering by adding a soft lockout per cauldron position
                 long now = System.currentTimeMillis();
                 long lastUsed = lastUseTime.getOrDefault(pos, 0L);
@@ -143,12 +161,6 @@ public class RightClickHandler
                     return;
                 }
                 lastUseTime.put(pos, now);
-
-                // Check if the cauldron is ready for bottle scooping
-                CauldronBrewState brewState = CauldronStateTracker.getState(pos);
-                
-                // Cauldron hasn't been stirred yet
-                if (brewState != CauldronBrewState.BREW_READY && brewState != CauldronBrewState.FAILED) break;
 
                 // Determine the correct potion, or witch's wart to fill the bottle with
                 ItemStack result;
@@ -216,20 +228,25 @@ public class RightClickHandler
                 BrewablesMod.LOGGER.debug("[BOTTLE] Triggered after that one spot. Level here is: {} at {}", newLevel, pos);
 
                 // If doses hit 0, reset the cauldron
-                if (dosesRemaining != 0)
+                if (dosesRemaining == 0)
                 {
                     CauldronStateTracker.reset(pos);
                     ItemInCauldronHandler.clearIngredients(pos);
 
-                    // Update the block state to reflect the cauldron being empty
-                    BlockState cleared = updatedState
+                    // Force chunk + block state reset: replace with air first
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+
+                    // Re-place fresh cauldron with correct empty state
+                    BlockState cleared = BrewablesMod.BREW_CAULDRON.get().defaultBlockState()
                         .setValue(BrewCauldronBlock.LEVEL, 0)
                         .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR)
                         .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.EMPTY);
                     level.setBlock(pos, cleared, 3);
-                    level.sendBlockUpdated(pos, updatedState, cleared, 3);
-                    level.scheduleTick(pos, cleared.getBlock(), 1);
-                    BrewablesMod.LOGGER.debug("[BOTTLE] Cauldron reset to EMPTY at {}", pos);
+
+                    level.sendBlockUpdated(pos, Blocks.AIR.defaultBlockState(), cleared, 3);
+                    level.markAndNotifyBlock(pos, level.getChunkAt(pos), Blocks.AIR.defaultBlockState(), cleared, 3, 512);
+
+                    BrewablesMod.LOGGER.debug("[BOTTLE] Cauldron force-reset by air-swap at {}", pos);
                 }
 
                 // Replace glass bottle with the resulting potion
