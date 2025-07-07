@@ -68,6 +68,9 @@ public class RightClickHandler
         var block = state.getBlock();
         ItemStack heldItem = player.getItemInHand(event.getHand());
 
+        // Ignore client-side event entirely
+        if (level.isClientSide) return;
+
         // Determine the action based on the held item
         String actionForSwitchCase;
         if (heldItem.is(Items.WATER_BUCKET))    // Water Bucket
@@ -229,8 +232,9 @@ public class RightClickHandler
                             .setValue(BrewCauldronBlock.LEVEL, 0)
                             .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR)
                             .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.EMPTY);
-                    level.setBlock(pos, newState, 3);
-                    level.sendBlockUpdated(pos, state, newState, 3);
+
+                    level.setBlock(pos, newState, Block.UPDATE_ALL);
+                    level.sendBlockUpdated(pos, state, newState, Block.UPDATE_ALL);
 
                     // DEBUG
                     BrewablesMod.LOGGER.info("[BOTTLE] Reset cauldron at {} to LEVEL={} directly", pos,
@@ -245,6 +249,7 @@ public class RightClickHandler
                     // Cancel the event
                     event.setCanceled(true);
                     event.setCancellationResult(InteractionResult.SUCCESS);
+                    return;
                 }
                 else
                 {
@@ -286,10 +291,7 @@ public class RightClickHandler
                 BrewablesMod.LOGGER.debug("[STIR] Matching ingredients at {}: {}", pos, ingredients);
 
                 // Fetch the current level of the water in the cauldron
-                int dosesRemaining = CauldronStateTracker.getDoses(pos);
-                int updatedLevel = Math.max(0, dosesRemaining);
-                if (updatedLevel == 0)
-                    updatedLevel = state.getValue(BrewCauldronBlock.LEVEL);
+                int updatedLevel = 3;
 
                 // Determine what kind of brew was made
                 if (result.isPresent()) // YOU MADE A POTION!
