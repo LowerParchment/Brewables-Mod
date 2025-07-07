@@ -1,6 +1,7 @@
 // Import self-created package declaration
 package com.LowerParchment.brewables;
 import com.LowerParchment.brewables.item.StirringRodItem;
+import com.LowerParchment.brewables.item.WitchsWartItem;
 import com.LowerParchment.brewables.block.BrewCauldronBlock;
 import com.LowerParchment.brewables.event.RightClickHandler;
 //import com.LowerParchment.brewables.event.PlayerInteractionHandler;
@@ -58,7 +59,7 @@ public class BrewablesMod
 
     // Registering the Witch's Wart item
     public static final RegistryObject<Item> WITCHS_WART = ITEMS.register("witchs_wart",
-            () -> new Item(new Item.Properties().stacksTo(16)));
+        () -> new WitchsWartItem(new Item.Properties().stacksTo(16)));
 
     // Registering the Brew Cauldron block, and its corresponding item
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);

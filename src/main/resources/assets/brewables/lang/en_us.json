@@ -2,5 +2,6 @@
     "itemGroup.brewables.brewables_tab": "Brewables",
     "item.brewables.stirring_rod": "Stirring Rod",
     "item.brewables.witchs_wart": "Witch's Wart",
+    "item.brewables.witchs_wart.tooltip": "A cursed brew. I shouldn't drink this... probably.",
     "block.brewables.brew_cauldron": "Brew Cauldron"
 }
