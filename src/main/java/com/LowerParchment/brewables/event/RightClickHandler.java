@@ -211,40 +211,49 @@ public class RightClickHandler
                     PotionUtils.setPotion(result, finalPotion);
                 }
 
-                // Check for at least 3 bottles
-                if (heldItem.getCount() >= 3)
+                if (heldItem.getCount() >= 1)
                 {
-                    // Give 3 potions
-                    for (int i = 0; i < 3; i++)
+                    // Give 1 potion
+                    ItemStack potionCopy = result.copy();
+                    if (!player.getInventory().add(potionCopy))
                     {
-                        ItemStack potionCopy = result.copy();
-                        if (!player.getInventory().add(potionCopy))
-                        {
-                            player.drop(potionCopy, false);
-                        }
+                        player.drop(potionCopy, false);
                     }
-                    heldItem.shrink(3);
+                    heldItem.shrink(1);
 
-                    BrewablesMod.LOGGER.debug("[BOTTLE] Gave 3 potions and consumed 3 bottles at {}", pos);
+                    BrewablesMod.LOGGER.debug("[BOTTLE] Gave 1 potion and consumed 1 bottle at {}", pos);
 
-                    // Replace cauldron with fresh empty state directly
-                    BlockState newState = BrewablesMod.BREW_CAULDRON.get().defaultBlockState()
-                            .setValue(BrewCauldronBlock.LEVEL, 0)
-                            .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR)
-                            .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.EMPTY);
+                    // Decrement the cauldron's level/doses
+                    int currentLevel = state.getValue(BrewCauldronBlock.LEVEL);
+                    int newLevel = currentLevel - 1;
 
-                    level.setBlock(pos, newState, Block.UPDATE_ALL);
-                    level.sendBlockUpdated(pos, state, newState, Block.UPDATE_ALL);
+                    if (newLevel > 0)
+                    {
+                        // Update block state to show reduced level
+                        BlockState newState = state.setValue(BrewCauldronBlock.LEVEL, newLevel);
+                        level.setBlock(pos, newState, Block.UPDATE_ALL);
+                        level.sendBlockUpdated(pos, state, newState, Block.UPDATE_ALL);
 
-                    // DEBUG
-                    BrewablesMod.LOGGER.info("[BOTTLE] Reset cauldron at {} to LEVEL={} directly", pos,
-                            newState.getValue(BrewCauldronBlock.LEVEL));
+                        CauldronStateTracker.setDoses(pos, newLevel);
 
-                    // Reset cauldron tracker and clear ingredients
-                    CauldronStateTracker.reset(pos);
-                    ItemInCauldronHandler.clearIngredients(pos);
+                        BrewablesMod.LOGGER.debug("[BOTTLE] Decremented cauldron at {} to LEVEL={}", pos, newLevel);
+                    }
+                    else
+                    {
+                        // Reset cauldron when last dose is taken
+                        BlockState newState = BrewablesMod.BREW_CAULDRON.get().defaultBlockState()
+                                .setValue(BrewCauldronBlock.LEVEL, 0)
+                                .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR)
+                                .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.EMPTY);
 
-                    BrewablesMod.LOGGER.debug("[BOTTLE] Cauldron force-reset after giving potions at {}", pos);
+                        level.setBlock(pos, newState, Block.UPDATE_ALL);
+                        level.sendBlockUpdated(pos, state, newState, Block.UPDATE_ALL);
+
+                        BrewablesMod.LOGGER.info("[BOTTLE] Reset cauldron at {} to LEVEL=0 after last dose", pos);
+
+                        CauldronStateTracker.reset(pos);
+                        ItemInCauldronHandler.clearIngredients(pos);
+                    }
 
                     // Cancel the event
                     event.setCanceled(true);
