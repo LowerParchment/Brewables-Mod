@@ -6,12 +6,20 @@ import com.LowerParchment.brewables.event.CauldronBrewState;
 import com.LowerParchment.brewables.handler.CauldronStateTracker;
 import com.LowerParchment.brewables.handler.ItemInCauldronHandler;
 
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.CauldronBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 
@@ -70,6 +78,77 @@ public class BrewCauldronBlock extends CauldronBlock
             l.sendBlockUpdated(pos, state, state, 3);
         }
         return super.updateShape(state, dir, neighborState, level, pos, neighborPos);
+    }
+
+    // Animate tick method to show bubbling particles when conditions are met: Campfire is underneath and cauldron is not empty.
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random)
+    {
+        super.animateTick(state, level, pos, random);
+
+        // Only show bubbles if a lit campfire is underneath
+        BlockPos belowPos = pos.below();
+        BlockState belowState = level.getBlockState(belowPos);
+        if (!(belowState.getBlock() instanceof CampfireBlock) || !belowState.getValue(CampfireBlock.LIT))
+        {
+            return;
+        }
+
+        // Optional: you can limit to certain water levels if needed
+        int levelVal = state.getValue(LEVEL);
+        if (levelVal == 0)
+        {
+            return;
+        }
+
+        // Pick y based on water level height
+        double y;
+        switch (levelVal)
+        {
+            case 1 -> y = pos.getY() + 0.61;
+            case 2 -> y = pos.getY() + 0.78;
+            case 3 -> y = pos.getY() + 0.95;
+
+            // Fallback case for any unexpected values
+            default -> y = pos.getY() + 0.61;
+        };
+
+        // Spawn some bubbling particles
+        for (int i = 0; i < 6 + random.nextInt(4); i++)
+        {
+            double x = pos.getX() + 0.2 + random.nextDouble() * 0.6;
+            double z = pos.getZ() + 0.2 + random.nextDouble() * 0.6;
+
+            level.addParticle(ParticleTypes.BUBBLE_POP, x, y, z, 0.0D, 0.02D, 0.0D);
+        }
+
+        // Play occasional boiling sounds (lava ambient + pop)
+        if (random.nextFloat() < 0.05F)
+        {
+            ((ClientLevel) level).playLocalSound(
+                    pos.getX() + 0.5,
+                    pos.getY() + 0.5,
+                    pos.getZ() + 0.5,
+                    SoundEvents.LAVA_POP,
+                    SoundSource.BLOCKS,
+                    0.5F,
+                    0.9F + random.nextFloat() * 0.2F,
+                    false);
+        }
+
+        if (random.nextFloat() < 0.02F)
+        {
+            ((ClientLevel) level).playLocalSound(
+                    pos.getX() + 0.5,
+                    pos.getY() + 0.5,
+                    pos.getZ() + 0.5,
+                    SoundEvents.LAVA_AMBIENT,
+                    SoundSource.BLOCKS,
+                    0.4F,
+                    0.8F + random.nextFloat() * 0.2F,
+                    false);
+        }
     }
 
     public void tick(BlockState state, net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.util.RandomSource random)

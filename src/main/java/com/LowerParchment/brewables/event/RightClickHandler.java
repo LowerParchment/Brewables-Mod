@@ -21,6 +21,7 @@ import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -241,6 +242,20 @@ public class RightClickHandler
                 // Check the current cauldron state and any ingredients present
                 CauldronBrewState brewState = CauldronStateTracker.getState(pos);
                 List<ItemStack> ingredients = ingredientsByCauldron.getOrDefault(pos, new ArrayList<>());
+
+                // Check for a campfire block below the cauldron
+                BlockPos belowPos = pos.below();
+                BlockState belowState = level.getBlockState(belowPos);
+                if (!(belowState.getBlock() instanceof CampfireBlock) || !belowState.getValue(CampfireBlock.LIT))
+                {
+                    if (!level.isClientSide())
+                    {
+                        player.displayClientMessage(Component.literal("I'll need a campfire to boil the water."), true);
+                    }
+                    event.setCanceled(true);
+                    event.setCancellationResult(InteractionResult.FAIL);
+                    break;
+                }
 
                 // The cauldron is empty and you tried to stir it
                 if (ingredients.isEmpty())
