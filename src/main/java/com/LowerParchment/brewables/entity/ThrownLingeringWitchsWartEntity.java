@@ -5,6 +5,8 @@ import com.LowerParchment.brewables.item.WitchsWartItem;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.EntityType;
@@ -52,6 +54,30 @@ public class ThrownLingeringWitchsWartEntity extends ThrowableItemProjectile
             cloud.addEffect(effect);
 
             ((ServerLevel) level()).addFreshEntity(cloud);
+
+            // Spawn impact particles
+            ServerLevel server = (ServerLevel) level();
+            server.sendParticles(
+                ParticleTypes.WITCH,
+                this.getX(), this.getY(), this.getZ(),
+                20, 0.3, 0.25, 0.3, 0.02
+            );
+            server.sendParticles(
+                ParticleTypes.SMOKE,
+                this.getX(), this.getY(), this.getZ(),
+                15, 0.3, 0.25, 0.3, 0.01
+            );
+            server.sendParticles(
+                ParticleTypes.SOUL,
+                this.getX(), this.getY(), this.getZ(),
+                10, 0.2, 0.2, 0.2, 0.01
+            );
+
+            // Play impact sound
+            server.playSound(null, this.blockPosition(), SoundEvents.SOUL_ESCAPE, SoundSource.NEUTRAL, 1.2F,
+                    0.7F + server.random.nextFloat() * 0.3F);
+            server.playSound(null, this.blockPosition(), SoundEvents.GLASS_BREAK, SoundSource.NEUTRAL, 1.0F,
+                    0.9F + server.random.nextFloat() * 0.2F);
         }
 
         level().broadcastEntityEvent(this, (byte) 3);

@@ -7,13 +7,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
+
+import com.LowerParchment.brewables.entity.ThrownWitchsWartEntity;
 
 import java.util.List;
 import java.util.Random;
@@ -135,4 +142,34 @@ public class WitchsWartItem extends PotionItem
     
         return new MobEffectInstance(effect, duration, amplifier);
     }
+
+    // Override the use method to throw a ThrownWitchsWartEntity when used
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player user, InteractionHand hand)
+    {
+        ItemStack stack = user.getItemInHand(hand);
+
+        // Play throw sound on client only
+        if (level.isClientSide)
+        {
+            user.playSound(
+                    SoundEvents.SPLASH_POTION_THROW, 1.0F, 0.8F + level.random.nextFloat() * 0.2F);
+        }
+
+        if (!level.isClientSide)
+        {
+            ThrownWitchsWartEntity wart = new ThrownWitchsWartEntity(level, user);
+            wart.setItem(stack);
+            wart.shootFromRotation(user, user.getXRot(), user.getYRot(), 0.0F, 0.75F, 1.0F);
+            level.addFreshEntity(wart);
+        }
+
+        if (!user.getAbilities().instabuild)
+        {
+            stack.shrink(1);
+        }
+
+        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+    }
+
 }

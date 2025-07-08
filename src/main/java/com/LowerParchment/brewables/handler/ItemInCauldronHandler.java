@@ -8,6 +8,8 @@ import com.LowerParchment.brewables.handler.BrewRecipeRegistry.BrewResult;
 import com.LowerParchment.brewables.handler.CauldronStateTracker;
 
 import java.util.*;
+
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
@@ -24,6 +26,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 
 // In this code, we check for item entities in the world and see if they are in a water cauldron.
 @Mod.EventBusSubscriber (modid = BrewablesMod.MODID)
@@ -119,6 +122,29 @@ public class ItemInCauldronHandler
                                 "[ITEM HANDLER] Nether Wart triggered block update at {} with LEVEL={}", cauldronPos,
                                 state.getValue(BrewCauldronBlock.LEVEL));
 
+                        // Play a sound effect for adding Nether Wart
+                        level.playSound(
+                        null,
+                        cauldronPos,
+                        SoundEvents.FIRECHARGE_USE,
+                        SoundSource.BLOCKS,
+                        1.0F,
+                        0.8F + level.random.nextFloat() * 0.3F);
+
+                        // Spawn a particle effect for visual feedback
+                        if (level instanceof ServerLevel serverLevel)
+                        {
+                            serverLevel.sendParticles(
+                                ParticleTypes.SPLASH,
+                                cauldronPos.getX() + 0.5,
+                                cauldronPos.getY() + 0.9,
+                                cauldronPos.getZ() + 0.5,
+                                8, // count
+                                0.3, 0.1, 0.3, // x, y, z spread
+                                0.02 // speed
+                            );
+                        }
+
                         // Set cauldron state to BASE_READY
                         CauldronStateTracker.setState(cauldronPos, CauldronBrewState.BASE_READY);
 
@@ -146,6 +172,29 @@ public class ItemInCauldronHandler
                     // Add the item to the cauldron's ingredient list
                     List<ItemStack> ingredientList = ingredientsByCauldron.computeIfAbsent(cauldronPos, k -> new ArrayList<>());
                     ingredientList.add(item.getItem().copy());
+
+                    // Play a sound effect for adding an ingredient
+                    level.playSound(
+                            null,
+                            cauldronPos,
+                            SoundEvents.AMETHYST_BLOCK_HIT,
+                            SoundSource.BLOCKS,
+                            1.4F,
+                            0.9F + level.random.nextFloat() * 0.1F);
+
+                    // Spawn a particle effect for visual feedback
+                    if (level instanceof ServerLevel serverLevel)
+                    {
+                        serverLevel.sendParticles(
+                                ParticleTypes.SPLASH,
+                                cauldronPos.getX() + 0.5,
+                                cauldronPos.getY() + 0.9,
+                                cauldronPos.getZ() + 0.5,
+                                8, // count
+                                0.3, 0.1, 0.3, // x, y, z spread
+                                0.02 // speed
+                        );
+                    }
 
                     // Log added ingredient
                     System.out.println("Added " + itemStack.getCount() + "x " + itemStack.getDisplayName().getString() + " to cauldron at " + cauldronPos);

@@ -13,6 +13,7 @@ import java.util.*;
 
 // Minecraft Forge imports
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -27,6 +28,9 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 
 // Player interaction handler for right-click events on blocks, specifically Brewables mod cauldrons
 @Mod.EventBusSubscriber(modid = BrewablesMod.MODID)
@@ -130,6 +134,15 @@ public class RightClickHandler
             // Handle filling a bottle from the cauldron
             case "BOTTLE":
             {
+                // Play the bottle fill sound effect
+                level.playSound(
+                        null,
+                        pos,
+                        SoundEvents.BOTTLE_FILL,
+                        SoundSource.BLOCKS,
+                        1.2F,
+                        0.9F + level.random.nextFloat() * 0.1F);
+
                 CauldronBrewState brewState = CauldronStateTracker.getState(pos);
 
                 // Early exit if cauldron isn't BREW_READY or FAILED
@@ -284,6 +297,23 @@ public class RightClickHandler
                 // Determine what kind of brew was made
                 if (result.isPresent()) // YOU MADE A POTION!
                 {
+                    // Play the sound effect for successful brewing
+                    level.playSound(null, pos, SoundEvents.SOUL_ESCAPE, SoundSource.BLOCKS, 1.1F, 0.7F + level.random.nextFloat() * 0.2F);
+                    level.playSound(null, pos, SoundEvents.LAVA_EXTINGUISH, SoundSource.BLOCKS, 0.4F, 1.0F);
+
+                    // Spawn a particle effect for visual feedback
+                    if (level instanceof ServerLevel serverLevel)
+                    {
+                        serverLevel.sendParticles(
+                                ParticleTypes.HAPPY_VILLAGER,
+                                pos.getX() + 0.5,
+                                pos.getY() + 0.9,
+                                pos.getZ() + 0.5,
+                                15,
+                                0.4, 0.2, 0.4,
+                                0.05);
+                    }
+
                     // Successfully brewed a potion: set its properties and notify the player
                     BrewResult data = result.get();
                     Potion finalPotion = BrewRecipeRegistry.applyModifiers(
@@ -322,6 +352,28 @@ public class RightClickHandler
 
                 else // YOU MADE A WITCH'S WART!
                 {
+                    // Play the sound effect for successful brewing
+                    level.playSound(
+                            null,
+                            pos,
+                            SoundEvents.ENCHANTMENT_TABLE_USE,
+                            SoundSource.BLOCKS,
+                            1.0F,
+                            0.8F + level.random.nextFloat() * 0.2F);
+
+                    // Spawn a particle effect for visual feedback
+                    if (level instanceof ServerLevel serverLevel)
+                    {
+                        serverLevel.sendParticles(
+                                ParticleTypes.WITCH,
+                                pos.getX() + 0.5,
+                                pos.getY() + 0.9,
+                                pos.getZ() + 0.5,
+                                15,
+                                0.4, 0.2, 0.4,
+                                0.05);
+                    }
+
                     player.displayClientMessage(Component.literal("Witch’s Wart brewed. That can't be right..."), true);
 
                     // Wart brew is ready, so set it's disgusting properties

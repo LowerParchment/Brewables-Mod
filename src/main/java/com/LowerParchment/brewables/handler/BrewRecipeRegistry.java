@@ -117,24 +117,26 @@ public class BrewRecipeRegistry
     // Method to get the BrewColorType based on the potion type from above
     public static BrewColorType getColorForPotion(Potion potion)
     {
-        if (potion == Potions.SWIFTNESS) return BrewColorType.SWIFTNESS;
-        if (potion == Potions.SLOWNESS) return BrewColorType.SLOWNESS;
-        if (potion == Potions.LEAPING) return BrewColorType.LEAPING;
-        if (potion == Potions.STRENGTH) return BrewColorType.STRENGTH;
-        if (potion == Potions.HEALING) return BrewColorType.HEALING;
-        if (potion == Potions.HARMING) return BrewColorType.HARMING;
-        if (potion == Potions.POISON) return BrewColorType.POISON;
-        if (potion == Potions.REGENERATION) return BrewColorType.REGENERATION;
-        if (potion == Potions.FIRE_RESISTANCE) return BrewColorType.FIRE_RESISTANCE;
-        if (potion == Potions.WATER_BREATHING) return BrewColorType.WATER_BREATHING;
-        if (potion == Potions.NIGHT_VISION) return BrewColorType.NIGHT_VISION;
-        if (potion == Potions.INVISIBILITY) return BrewColorType.INVISIBILITY;
-        if (potion == Potions.TURTLE_MASTER) return BrewColorType.TURTLE_MASTER;
-        if (potion == Potions.SLOW_FALLING) return BrewColorType.SLOW_FALLING;
-        if (potion == Potions.WEAKNESS) return BrewColorType.WEAKNESS;
+        // Normalize the potion to its base variant
+        Potion base = getBaseVariant(potion);
+
+        if (base == Potions.SWIFTNESS) return BrewColorType.SWIFTNESS;
+        if (base == Potions.SLOWNESS) return BrewColorType.SLOWNESS;
+        if (base == Potions.LEAPING) return BrewColorType.LEAPING;
+        if (base == Potions.STRENGTH) return BrewColorType.STRENGTH;
+        if (base == Potions.HEALING) return BrewColorType.HEALING;
+        if (base == Potions.HARMING) return BrewColorType.HARMING;
+        if (base == Potions.POISON) return BrewColorType.POISON;
+        if (base == Potions.REGENERATION) return BrewColorType.REGENERATION;
+        if (base == Potions.FIRE_RESISTANCE) return BrewColorType.FIRE_RESISTANCE;
+        if (base == Potions.WATER_BREATHING) return BrewColorType.WATER_BREATHING;
+        if (base == Potions.NIGHT_VISION) return BrewColorType.NIGHT_VISION;
+        if (base == Potions.INVISIBILITY) return BrewColorType.INVISIBILITY;
+        if (base == Potions.TURTLE_MASTER) return BrewColorType.TURTLE_MASTER;
+        if (base == Potions.SLOW_FALLING) return BrewColorType.SLOW_FALLING;
+        if (base == Potions.WEAKNESS) return BrewColorType.WEAKNESS;
 
         // Default fallback
-        System.out.println("[WARN] Unmapped potion in getColorForPotion: " + potion);
         return BrewColorType.WART;
     }
 
