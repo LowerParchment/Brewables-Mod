@@ -4,6 +4,7 @@ package com.LowerParchment.brewables.handler;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.ItemStack;
 
@@ -14,10 +15,84 @@ import com.LowerParchment.brewables.block.BrewColorType;
 public class BrewRecipeRegistry
 {
     // Establish the BrewResult record
-    public record BrewResult(Potion basePotion, boolean useGlowstone, boolean useRedstone, boolean useGunpowder) {}
+    public record BrewResult(Potion basePotion, boolean useGlowstone, boolean useRedstone, boolean useGunpowder, boolean useDragonBreath) {}
 
     // Define a map to hold brewing recipes
     private static final Map<List<Item>, Potion> RECIPE_MAP = new HashMap<>();
+
+    // Helper method to create a potion stack based on the potion type and whether it is splash or lingering.
+    public static ItemStack createPotionStack(Potion potion, boolean isSplash, boolean isLingering)
+    {
+        Item baseItem = isLingering
+            ? Items.LINGERING_POTION
+            : isSplash
+                ? Items.SPLASH_POTION
+                : Items.POTION;
+
+        return PotionUtils.setPotion(new ItemStack(baseItem), potion);
+    }
+
+    // Method to get the base variant of a potion, stripping any modifiers like strong or long for json consistency.
+    public static Potion getBaseVariant(Potion potion)
+    {
+        if (potion == Potions.STRONG_SWIFTNESS || potion == Potions.LONG_SWIFTNESS) return Potions.SWIFTNESS;
+        if (potion == Potions.STRONG_HEALING) return Potions.HEALING;
+        if (potion == Potions.STRONG_POISON || potion == Potions.LONG_POISON) return Potions.POISON;
+        if (potion == Potions.STRONG_REGENERATION || potion == Potions.LONG_REGENERATION) return Potions.REGENERATION;
+        if (potion == Potions.STRONG_HARMING) return Potions.HARMING;
+        if (potion == Potions.STRONG_LEAPING || potion == Potions.LONG_LEAPING) return Potions.LEAPING;
+        if (potion == Potions.STRONG_SLOWNESS || potion == Potions.LONG_SLOWNESS) return Potions.SLOWNESS;
+        if (potion == Potions.LONG_FIRE_RESISTANCE) return Potions.FIRE_RESISTANCE;
+        if (potion == Potions.LONG_WATER_BREATHING) return Potions.WATER_BREATHING;
+        if (potion == Potions.LONG_NIGHT_VISION) return Potions.NIGHT_VISION;
+        if (potion == Potions.LONG_INVISIBILITY) return Potions.INVISIBILITY;
+        if (potion == Potions.LONG_WEAKNESS) return Potions.WEAKNESS;
+        if (potion == Potions.LONG_TURTLE_MASTER || potion == Potions.STRONG_TURTLE_MASTER) return Potions.TURTLE_MASTER;
+        if (potion == Potions.LONG_SLOW_FALLING) return Potions.SLOW_FALLING;
+        return potion;
+    }
+
+    // Method to apply modifiers to a base potion based on the presence of Glowstone, Redstone dust, or Dragon's Breath.
+    public static Potion applyModifiers(Potion base, boolean useGlowstone, boolean useRedstone)
+    {
+        if (useGlowstone && useRedstone)
+        {
+            // Both modifiers together are invalid in vanilla – return base or null to trigger failure
+            System.out.println("[WARN] Both Glowstone and Redstone present – invalid combo.");
+            return base;
+        }
+    
+        if (useGlowstone)
+        {
+            if (base == Potions.SWIFTNESS) return Potions.STRONG_SWIFTNESS;
+            if (base == Potions.HEALING) return Potions.STRONG_HEALING;
+            if (base == Potions.POISON) return Potions.STRONG_POISON;
+            if (base == Potions.REGENERATION) return Potions.STRONG_REGENERATION;
+            if (base == Potions.HARMING) return Potions.STRONG_HARMING;
+            if (base == Potions.LEAPING) return Potions.STRONG_LEAPING;
+            if (base == Potions.SLOWNESS) return Potions.STRONG_SLOWNESS;
+            if (base == Potions.TURTLE_MASTER) return Potions.STRONG_TURTLE_MASTER;
+        }
+    
+        if (useRedstone)
+        {
+            if (base == Potions.SWIFTNESS) return Potions.LONG_SWIFTNESS;
+            if (base == Potions.LEAPING) return Potions.LONG_LEAPING;
+            if (base == Potions.POISON) return Potions.LONG_POISON;
+            if (base == Potions.REGENERATION) return Potions.LONG_REGENERATION;
+            if (base == Potions.SLOWNESS) return Potions.LONG_SLOWNESS;
+            if (base == Potions.WEAKNESS) return Potions.LONG_WEAKNESS;
+            if (base == Potions.NIGHT_VISION) return Potions.LONG_NIGHT_VISION;
+            if (base == Potions.INVISIBILITY) return Potions.LONG_INVISIBILITY;
+            if (base == Potions.FIRE_RESISTANCE) return Potions.LONG_FIRE_RESISTANCE;
+            if (base == Potions.WATER_BREATHING) return Potions.LONG_WATER_BREATHING;
+            if (base == Potions.TURTLE_MASTER) return Potions.LONG_TURTLE_MASTER;
+            if (base == Potions.SLOW_FALLING) return Potions.LONG_SLOW_FALLING;
+        }
+    
+        // Return the base potion if no modifiers apply
+        return base;
+    }
 
     // Static block to initialize the recipe map with known brewing recipes : 15 total
     static
@@ -70,6 +145,7 @@ public class BrewRecipeRegistry
         boolean hasGlowstone = false;
         boolean hasRedstone = false;
         boolean hasGunpowder = false;
+        boolean useDragonBreath = false;
 
         for (ItemStack stack : ingredients)
         {
@@ -77,6 +153,7 @@ public class BrewRecipeRegistry
             if (item == Items.GLOWSTONE_DUST) hasGlowstone = true;
             else if (item == Items.REDSTONE) hasRedstone = true;
             else if (item == Items.GUNPOWDER) hasGunpowder = true;
+            else if (item == Items.DRAGON_BREATH) useDragonBreath = true;
             else baseIngredients.add(item);
         }
 
@@ -88,8 +165,9 @@ public class BrewRecipeRegistry
             List<Item> key = new ArrayList<>(entry.getKey());
             key.sort(Comparator.comparing(Item::getDescriptionId));
 
-            if (key.equals(baseIngredients)) {
-                return Optional.of(new BrewResult(entry.getValue(), hasGlowstone, hasRedstone, hasGunpowder));
+            if (key.equals(baseIngredients))
+            {
+                return Optional.of(new BrewResult(entry.getValue(), hasGlowstone, hasRedstone, hasGunpowder, useDragonBreath));
             }
         }
 

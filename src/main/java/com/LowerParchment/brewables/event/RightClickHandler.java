@@ -42,11 +42,6 @@ import net.minecraftforge.event.TickEvent;
 @Mod.EventBusSubscriber(modid = BrewablesMod.MODID)
 public class RightClickHandler
 {
-    // DEBUG
-    static {
-        BrewablesMod.LOGGER.info("[RightClickHandler] Class loaded — if you see this, Forge registered your handler.");
-    }
-
     // Class available declarations
     private static final Map<BlockPos, Long> lastUseTime = new HashMap<>();
     private static final long LOCKOUT_MS = 100;
@@ -102,23 +97,12 @@ public class RightClickHandler
                 // If the cauldron is empty
                 if (state.getValue(BrewCauldronBlock.LEVEL) == 0)
                 {
-                    BrewablesMod.LOGGER.debug("Refill triggered at {}: LEVEL will be set to 3", pos);
-
                     // Refill water level and reset tint. Then update the block data.
                     BlockState newState = state
                             .setValue(BrewCauldronBlock.LEVEL, 3)
                             .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR);
                     level.setBlock(pos, newState, 3);
                     level.sendBlockUpdated(pos, state, newState, 3);
-
-                    // DEBUG WATER LEVEL
-                    BrewablesMod.LOGGER.info("[STATE-UPDATE][SERVER={}]: setBlock at {} to LEVEL={} BREW_STATE={}",
-                            level.isClientSide ? "CLIENT" : "SERVER",
-                            pos,
-                            newState.getValue(BrewCauldronBlock.LEVEL),
-                            newState.getValue(BrewCauldronBlock.BREW_STATE));
-
-                    BrewablesMod.LOGGER.debug("[REFILL] Cauldron refilled at {}: LEVEL=3, COLOR=CLEAR", pos);
 
                     // Reset the brew states
                     CauldronStateTracker.setState(pos, CauldronBrewState.EMPTY);
@@ -159,25 +143,22 @@ public class RightClickHandler
                 CauldronBrewState brewState = CauldronStateTracker.getState(pos);
 
                 // Early exit if cauldron isn't BREW_READY or FAILED
-                if (brewState != CauldronBrewState.BREW_READY && brewState != CauldronBrewState.FAILED) {
-                    BrewablesMod.LOGGER.debug("[BOTTLE] Skipping: cauldron not in BREW_READY or FAILED state at {}", pos);
-                    break;
-                }
+                if (brewState != CauldronBrewState.BREW_READY && brewState != CauldronBrewState.FAILED) break;
 
                 // Prevent rapid double-triggering by adding soft lockout
                 long now = System.currentTimeMillis();
                 long lastUsed = lastUseTime.getOrDefault(pos, 0L);
-                if (now - lastUsed < LOCKOUT_MS) {
-                    System.out.println("[BOTTLE] Skipping double-trigger at: " + pos);
-                    return;
-                }
+                if (now - lastUsed < LOCKOUT_MS) return;
                 lastUseTime.put(pos, now);
 
                 // Determine the correct potion or witch's wart
                 ItemStack result;
-                if (brewState == CauldronBrewState.FAILED) {
+                if (brewState == CauldronBrewState.FAILED)
+                {
                     result = new ItemStack(BrewablesMod.WITCHS_WART.get());
-                } else {
+                }
+                else
+                {
                     BrewResult brewResult = CauldronStateTracker.getResult(pos);
                     Potion base = brewResult.basePotion();
                     boolean isStrong = brewResult.useGlowstone();
@@ -186,14 +167,17 @@ public class RightClickHandler
                     Potion finalPotion = base;
 
                     // Apply potency/duration modifiers
-                    if (isStrong) {
+                    if (isStrong)
+                    {
                         if (Potions.HEALING.equals(base)) finalPotion = Potions.STRONG_HEALING;
                         else if (Potions.POISON.equals(base)) finalPotion = Potions.STRONG_POISON;
                         else if (Potions.REGENERATION.equals(base)) finalPotion = Potions.STRONG_REGENERATION;
                         else if (Potions.STRENGTH.equals(base)) finalPotion = Potions.STRONG_STRENGTH;
                         else if (Potions.HARMING.equals(base)) finalPotion = Potions.STRONG_HARMING;
                         else if (Potions.SLOWNESS.equals(base)) finalPotion = Potions.STRONG_SLOWNESS;
-                    } else if (isLong) {
+                    }
+                    else if (isLong)
+                    {
                         if (Potions.SWIFTNESS.equals(base)) finalPotion = Potions.LONG_SWIFTNESS;
                         else if (Potions.LEAPING.equals(base)) finalPotion = Potions.LONG_LEAPING;
                         else if (Potions.FIRE_RESISTANCE.equals(base)) finalPotion = Potions.LONG_FIRE_RESISTANCE;
@@ -206,9 +190,8 @@ public class RightClickHandler
                         else if (Potions.TURTLE_MASTER.equals(base)) finalPotion = Potions.LONG_TURTLE_MASTER;
                     }
 
-                    Item resultItem = isSplash ? Items.SPLASH_POTION : Items.POTION;
-                    result = new ItemStack(resultItem);
-                    PotionUtils.setPotion(result, finalPotion);
+                    boolean isLingering = brewResult.useDragonBreath();
+                    result = BrewRecipeRegistry.createPotionStack(finalPotion, isSplash, isLingering);
                 }
 
                 if (heldItem.getCount() >= 1)
@@ -220,8 +203,6 @@ public class RightClickHandler
                         player.drop(potionCopy, false);
                     }
                     heldItem.shrink(1);
-
-                    BrewablesMod.LOGGER.debug("[BOTTLE] Gave 1 potion and consumed 1 bottle at {}", pos);
 
                     // Decrement the cauldron's level/doses
                     int currentLevel = state.getValue(BrewCauldronBlock.LEVEL);
@@ -235,8 +216,6 @@ public class RightClickHandler
                         level.sendBlockUpdated(pos, state, newState, Block.UPDATE_ALL);
 
                         CauldronStateTracker.setDoses(pos, newLevel);
-
-                        BrewablesMod.LOGGER.debug("[BOTTLE] Decremented cauldron at {} to LEVEL={}", pos, newLevel);
                     }
                     else
                     {
@@ -248,8 +227,6 @@ public class RightClickHandler
 
                         level.setBlock(pos, newState, Block.UPDATE_ALL);
                         level.sendBlockUpdated(pos, state, newState, Block.UPDATE_ALL);
-
-                        BrewablesMod.LOGGER.info("[BOTTLE] Reset cauldron at {} to LEVEL=0 after last dose", pos);
 
                         CauldronStateTracker.reset(pos);
                         ItemInCauldronHandler.clearIngredients(pos);
@@ -263,7 +240,6 @@ public class RightClickHandler
                 else
                 {
                     // Not enough bottles → inform player
-                    BrewablesMod.LOGGER.debug("[BOTTLE] Not enough bottles at {} (need 3, have {})", pos, heldItem.getCount());
                     player.displayClientMessage(Component.literal("You need 3 glass bottles to retrieve all doses!"), true);
                 }
 
@@ -297,7 +273,6 @@ public class RightClickHandler
 
                 // Attempt to match the ingredients to a valid brew recipe
                 Optional<BrewRecipeRegistry.BrewResult> result = BrewRecipeRegistry.match(ingredients);
-                BrewablesMod.LOGGER.debug("[STIR] Matching ingredients at {}: {}", pos, ingredients);
 
                 // Fetch the current level of the water in the cauldron
                 int updatedLevel = 3;
@@ -307,28 +282,34 @@ public class RightClickHandler
                 {
                     // Successfully brewed a potion: set its properties and notify the player
                     BrewRecipeRegistry.BrewResult brew = result.get();
+                    BrewResult data = result.get();
+                    Potion finalPotion = BrewRecipeRegistry.applyModifiers(
+                        data.basePotion(),
+                        data.useGlowstone(),
+                        data.useRedstone()
+                    );
                     CauldronStateTracker.setState(pos, CauldronBrewState.BREW_READY);
                     CauldronStateTracker.setDoses(pos, updatedLevel);
-                    CauldronStateTracker.setResult(pos, brew);
+                    CauldronStateTracker.setResult(pos,
+                    new BrewRecipeRegistry.BrewResult(finalPotion, data.useGlowstone(), data.useRedstone(), data.useGunpowder(), data.useDragonBreath()));
+
                     player.displayClientMessage(Component.literal("Successful brew! You made a potion."), true);
 
                     // Update the block state
                     BlockState brewedState = state
                             .setValue(BrewCauldronBlock.LEVEL,
                                     updatedLevel)
-                            .setValue(BrewCauldronBlock.COLOR, BrewRecipeRegistry.getColorForPotion(brew.basePotion()))
+                            .setValue(BrewCauldronBlock.COLOR, BrewRecipeRegistry.getColorForPotion(finalPotion))
                             .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.BREW_READY);
                     level.setBlock(pos, brewedState, 3);
                     level.sendBlockUpdated(pos, state, brewedState, 3);
-                    BrewablesMod.LOGGER.debug("[STIR] LEVEL set to {} at {} with successful brew", updatedLevel, pos);
 
                     // EARLY EXIT HERE: prevents the handler from continuing and incorrectly
                     // firing the "already brewed" message during the same stir click
                     break;
                 }
 
-                // The cauldron is full of potion, or witch's wart, but you tried to stir it
-                // anyway
+                // The cauldron is full of potion, or witch's wart, but you tried to stir it anyway
                 if (brewState == CauldronBrewState.BREW_READY || brewState == CauldronBrewState.FAILED)
                 {
                     player.displayClientMessage(Component.literal("This cauldron is full of potion. Use a bottle!"),
@@ -352,7 +333,6 @@ public class RightClickHandler
                             .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.FAILED);
                     level.setBlock(pos, wartState, 3);
                     level.sendBlockUpdated(pos, state, wartState, 3);
-                    BrewablesMod.LOGGER.debug("[STIR] LEVEL set to {} at {} with failed brew", updatedLevel, pos);
                 }
 
                 // Cancel the event to prevent default interaction behavior
@@ -365,7 +345,6 @@ public class RightClickHandler
                 {
                     level.getServer().execute(() -> {
                         ingredientsByCauldron.remove(pos);
-                        BrewablesMod.LOGGER.info("[STIR] Cleared ingredients from {}", pos);
                     });
                 }
 

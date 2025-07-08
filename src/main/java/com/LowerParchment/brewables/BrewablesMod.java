@@ -2,14 +2,12 @@
 package com.LowerParchment.brewables;
 import com.LowerParchment.brewables.item.StirringRodItem;
 import com.LowerParchment.brewables.item.WitchsWartItem;
+import com.LowerParchment.brewables.item.SplashWitchsWartItem;
+import com.LowerParchment.brewables.item.LingeringWitchsWartItem;
 import com.LowerParchment.brewables.block.BrewCauldronBlock;
-import com.LowerParchment.brewables.event.RightClickHandler;
-//import com.LowerParchment.brewables.event.PlayerInteractionHandler;
-import com.LowerParchment.brewables.handler.ItemInCauldronHandler;
 
 // Import dependencies and classes
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
@@ -22,10 +20,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -61,6 +56,14 @@ public class BrewablesMod
     public static final RegistryObject<Item> WITCHS_WART = ITEMS.register("witchs_wart",
         () -> new WitchsWartItem(new Item.Properties().stacksTo(16)));
 
+    // Registering the Splash Witch's Wart item
+    public static final RegistryObject<Item> SPLASH_WITCHS_WART = ITEMS.register("splash_witchs_wart",
+        () -> new SplashWitchsWartItem(new Item.Properties().stacksTo(1)));
+
+    // Registering the Lingering Witch's Wart item
+    public static final RegistryObject<Item> LINGERING_WITCHS_WART = ITEMS.register("lingering_witchs_wart",
+        () -> new LingeringWitchsWartItem(new Item.Properties().stacksTo(1)));
+
     // Registering the Brew Cauldron block, and its corresponding item
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     public static final RegistryObject<Block> BREW_CAULDRON = BLOCKS.register("brew_cauldron", () ->
@@ -81,6 +84,9 @@ public class BrewablesMod
                     .displayItems((parameters, output) -> {
                         output.accept(STIRRING_ROD.get());
                         output.accept(BREW_CAULDRON_ITEM.get());
+                        output.accept(WITCHS_WART.get());
+                        output.accept(SPLASH_WITCHS_WART.get());
+                        output.accept(LINGERING_WITCHS_WART.get());
                     }).build());
 
     // Integer property for the water level of the cauldron
@@ -93,6 +99,7 @@ public class BrewablesMod
         ITEMS.register(modEventBus);
         BLOCKS.register(modEventBus);
         CREATIVE_TABS.register(modEventBus);
+        ModEntities.ENTITY_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addToCreativeTab);

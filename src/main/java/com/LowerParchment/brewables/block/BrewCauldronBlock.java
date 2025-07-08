@@ -46,10 +46,12 @@ public class BrewCauldronBlock extends CauldronBlock
     }
 
     @Override
-    public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+    public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean isMoving)
+    {
         super.onRemove(oldState, level, pos, newState, isMoving);
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide)
+        {
             // If the cauldron was replaced by a different block, clear stored data.
             if (oldState.getBlock() != newState.getBlock()) {
                 BrewablesMod.LOGGER.debug("[BREW_CAULDRON] Cleared data on block removal at {}", pos);
@@ -60,15 +62,17 @@ public class BrewCauldronBlock extends CauldronBlock
     }
 
     @Override
-    public BlockState updateShape(BlockState state, net.minecraft.core.Direction dir, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        if (level instanceof Level l && l.isClientSide) {
+    public BlockState updateShape(BlockState state, net.minecraft.core.Direction dir, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos)
+    {
+        if (level instanceof Level l && l.isClientSide)
+        {
             l.sendBlockUpdated(pos, state, state, 3);
         }
         return super.updateShape(state, dir, neighborState, level, pos, neighborPos);
     }
 
-    public void tick(BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
-            net.minecraft.util.RandomSource random) {
+    public void tick(BlockState state, net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.util.RandomSource random)
+    {
         if (level.isClientSide)
             return; // only act server-side
 

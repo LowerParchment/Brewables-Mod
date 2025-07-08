@@ -6,39 +6,36 @@ import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.Item;
 
 import javax.annotation.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
-public class WitchsWartItem extends PotionItem {
+public class WitchsWartItem extends PotionItem
+{
     public WitchsWartItem(Properties properties)
     {
         super(properties);
     }
 
     // Override the getName method to provide a custom name for the item
-    @Override
     public Component getName(ItemStack stack)
     {
-        return Component.translatable("item.brewables.witchs_wart");
+        return Component.translatable("item.brewables.witchs_wart").withStyle(ChatFormatting.RESET);
     }
 
     // Add lore to the item when hovered over in the inventory
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag)
     {
+        // Add a custom tooltip with lore
         tooltip.add(Component.translatable("item.brewables.witchs_wart.tooltip").withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.ITALIC));
     }
 
@@ -112,6 +109,30 @@ public class WitchsWartItem extends PotionItem {
             amplifier = 2 + RANDOM.nextInt(3); // 2–4
         }
 
+        return new MobEffectInstance(effect, duration, amplifier);
+    }
+
+    // Static method to get a random effect instance
+    public static MobEffectInstance getRandomEffectStatic()
+    {
+        Random random = new Random();
+        boolean isGood = random.nextFloat() < 0.2f;
+    
+        MobEffect effect;
+        int duration = 1800;
+        int amplifier;
+    
+        if (isGood)
+        {
+            effect = GOOD_EFFECTS.get(random.nextInt(GOOD_EFFECTS.size()));
+            amplifier = 1 + random.nextInt(2);
+        }
+        else
+        {
+            effect = BAD_EFFECTS.get(random.nextInt(BAD_EFFECTS.size()));
+            amplifier = 2 + random.nextInt(3);
+        }
+    
         return new MobEffectInstance(effect, duration, amplifier);
     }
 }
