@@ -53,7 +53,8 @@ public class BrewCauldronBlock extends CauldronBlock
         if (!level.isClientSide)
         {
             // If the cauldron was replaced by a different block, clear stored data.
-            if (oldState.getBlock() != newState.getBlock()) {
+            if (oldState.getBlock() != newState.getBlock())
+            {
                 BrewablesMod.LOGGER.debug("[BREW_CAULDRON] Cleared data on block removal at {}", pos);
                 ItemInCauldronHandler.clearIngredients(pos);
                 CauldronStateTracker.reset(pos);

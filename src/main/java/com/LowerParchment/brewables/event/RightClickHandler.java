@@ -6,7 +6,6 @@ import com.LowerParchment.brewables.block.BrewColorType;
 import com.LowerParchment.brewables.handler.CauldronStateTracker;
 import com.LowerParchment.brewables.handler.ItemInCauldronHandler;
 import com.LowerParchment.brewables.handler.BrewRecipeRegistry;
-import com.LowerParchment.brewables.event.CauldronBrewState;
 import com.LowerParchment.brewables.handler.BrewRecipeRegistry.BrewResult;
 
 // Java Utilities imports
@@ -16,27 +15,17 @@ import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.block.CauldronBlock;
-import net.minecraft.world.phys.AABB;
-import net.minecraftforge.event.TickEvent;
 
 // Player interaction handler for right-click events on blocks, specifically Brewables mod cauldrons
 @Mod.EventBusSubscriber(modid = BrewablesMod.MODID)
@@ -281,7 +270,6 @@ public class RightClickHandler
                 if (result.isPresent()) // YOU MADE A POTION!
                 {
                     // Successfully brewed a potion: set its properties and notify the player
-                    BrewRecipeRegistry.BrewResult brew = result.get();
                     BrewResult data = result.get();
                     Potion finalPotion = BrewRecipeRegistry.applyModifiers(
                         data.basePotion(),
