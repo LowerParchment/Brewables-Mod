@@ -5,6 +5,7 @@ import com.LowerParchment.brewables.block.BrewCauldronBlock;
 import com.LowerParchment.brewables.block.BrewColorType;
 import com.LowerParchment.brewables.handler.CauldronStateTracker;
 import com.LowerParchment.brewables.handler.ItemInCauldronHandler;
+import com.LowerParchment.brewables.item.WitchsWartItem;
 import com.LowerParchment.brewables.handler.BrewRecipeRegistry;
 import com.LowerParchment.brewables.handler.BrewRecipeRegistry.BrewResult;
 
@@ -158,7 +159,10 @@ public class RightClickHandler
                 ItemStack result;
                 if (brewState == CauldronBrewState.FAILED)
                 {
-                    result = new ItemStack(BrewablesMod.WITCHS_WART.get());
+                    BrewResult wartResult = CauldronStateTracker.getResult(pos);
+                    boolean isSplash = wartResult.useGunpowder();
+                    boolean isLingering = wartResult.useDragonBreath();
+                    result = WitchsWartItem.getWitchsWartStack(isSplash, isLingering);
                 }
                 else
                 {
@@ -167,6 +171,7 @@ public class RightClickHandler
                     boolean isStrong = brewResult.useGlowstone();
                     boolean isLong = brewResult.useRedstone();
                     boolean isSplash = brewResult.useGunpowder();
+                    boolean isLingering = brewResult.useDragonBreath();
                     Potion finalPotion = base;
 
                     // Apply potency/duration modifiers
@@ -193,7 +198,7 @@ public class RightClickHandler
                         else if (Potions.TURTLE_MASTER.equals(base)) finalPotion = Potions.LONG_TURTLE_MASTER;
                     }
 
-                    boolean isLingering = brewResult.useDragonBreath();
+                    // Create the potion stack based on the final potion and modifiers
                     result = BrewRecipeRegistry.createPotionStack(finalPotion, isSplash, isLingering);
                 }
 
@@ -379,6 +384,14 @@ public class RightClickHandler
                     // Wart brew is ready, so set it's disgusting properties
                     CauldronStateTracker.setState(pos, CauldronBrewState.FAILED);
                     CauldronStateTracker.setDoses(pos, updatedLevel);
+
+                    // Store whether or not the cauldron contains gunpowder or dragon's breath on a Witch's Wart brew
+                    boolean hasGunpowder = ItemInCauldronHandler.contains(pos, Items.GUNPOWDER);
+                    boolean hasDragonBreath = ItemInCauldronHandler.contains(pos, Items.DRAGON_BREATH);
+
+                    CauldronStateTracker.setResult(pos,
+                        new BrewResult(Potions.WATER, false, false, hasGunpowder, hasDragonBreath));
+
 
                     // Update the block state
                     BlockState wartState = state

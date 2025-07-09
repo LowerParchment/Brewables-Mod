@@ -52,17 +52,14 @@ public class BrewablesMod
     public static final RegistryObject<Item> STIRRING_ROD = ITEMS.register("stirring_rod",
         () -> new StirringRodItem(new Item.Properties()));
 
-    // Registering the Witch's Wart item
-    public static final RegistryObject<Item> WITCHS_WART = ITEMS.register("witchs_wart",
-        () -> new WitchsWartItem(new Item.Properties().stacksTo(16)));
+    // Witch's Wart - drinkable (default)
+    public static final RegistryObject<Item> WITCHS_WART_DRINKABLE = ITEMS.register("witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(16)));
 
-    // Registering the Splash Witch's Wart item
-    public static final RegistryObject<Item> SPLASH_WITCHS_WART = ITEMS.register("splash_witchs_wart",
-        () -> new SplashWitchsWartItem(new Item.Properties().stacksTo(1)));
+    // Witch's Wart - splash
+    public static final RegistryObject<Item> SPLASH_WITCHS_WART = ITEMS.register("splash_witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(1)));
 
-    // Registering the Lingering Witch's Wart item
-    public static final RegistryObject<Item> LINGERING_WITCHS_WART = ITEMS.register("lingering_witchs_wart",
-        () -> new LingeringWitchsWartItem(new Item.Properties().stacksTo(1)));
+    // Witch's Wart - lingering
+    public static final RegistryObject<Item> LINGERING_WITCHS_WART = ITEMS.register("lingering_witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(1)));
 
     // Registering the Brew Cauldron block, and its corresponding item
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
@@ -84,7 +81,7 @@ public class BrewablesMod
                     .displayItems((parameters, output) -> {
                         output.accept(STIRRING_ROD.get());
                         output.accept(BREW_CAULDRON_ITEM.get());
-                        output.accept(WITCHS_WART.get());
+                        output.accept(WITCHS_WART_DRINKABLE.get());
                         output.accept(SPLASH_WITCHS_WART.get());
                         output.accept(LINGERING_WITCHS_WART.get());
                     }).build());

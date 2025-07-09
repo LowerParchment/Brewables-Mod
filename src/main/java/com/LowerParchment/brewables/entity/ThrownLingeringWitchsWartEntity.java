@@ -1,4 +1,5 @@
 package com.LowerParchment.brewables.entity;
+import com.LowerParchment.brewables.BrewablesMod;
 import com.LowerParchment.brewables.ModEntities;
 import com.LowerParchment.brewables.item.WitchsWartItem;
 
@@ -13,6 +14,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.Potions;
+import java.util.List;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.network.NetworkHooks;
@@ -32,7 +37,7 @@ public class ThrownLingeringWitchsWartEntity extends ThrowableItemProjectile
     @Override
     protected Item getDefaultItem()
     {
-        return com.LowerParchment.brewables.BrewablesMod.LINGERING_WITCHS_WART.get();
+        return BrewablesMod.LINGERING_WITCHS_WART.get();
     }
 
     @Override
@@ -40,48 +45,36 @@ public class ThrownLingeringWitchsWartEntity extends ThrowableItemProjectile
     {
         super.onHit(result);
 
-        if (!level().isClientSide)
+        if (!this.level().isClientSide())
         {
-            MobEffectInstance effect = WitchsWartItem.getRandomEffectStatic();
+            // Get actual effects
+            ItemStack stack = this.getItem();
+            List<MobEffectInstance> effects = PotionUtils.getMobEffects(stack);
 
-            AreaEffectCloud cloud = new AreaEffectCloud(level(), this.getX(), this.getY(), this.getZ());
-            if (this.getOwner() instanceof LivingEntity owner) cloud.setOwner(owner);
+            // Create lingering cloud like vanilla
+            AreaEffectCloud cloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
+            if (this.getOwner() instanceof LivingEntity living)
+            {
+                cloud.setOwner(living);
+            }
             cloud.setRadius(3.0F);
-            cloud.setDuration(200);
+            cloud.setRadiusOnUse(-0.5F);
             cloud.setWaitTime(10);
+            cloud.setDuration(200);
             cloud.setRadiusPerTick(-0.03F);
+            
+            cloud.setPotion(Potions.WATER);
             cloud.setParticle(ParticleTypes.WITCH);
-            cloud.addEffect(effect);
 
-            ((ServerLevel) level()).addFreshEntity(cloud);
+            for (MobEffectInstance effect : effects)
+            {
+                cloud.addEffect(new MobEffectInstance(effect));
+            }
 
-            // Spawn impact particles
-            ServerLevel server = (ServerLevel) level();
-            server.sendParticles(
-                ParticleTypes.WITCH,
-                this.getX(), this.getY(), this.getZ(),
-                20, 0.3, 0.25, 0.3, 0.02
-            );
-            server.sendParticles(
-                ParticleTypes.SMOKE,
-                this.getX(), this.getY(), this.getZ(),
-                15, 0.3, 0.25, 0.3, 0.01
-            );
-            server.sendParticles(
-                ParticleTypes.SOUL,
-                this.getX(), this.getY(), this.getZ(),
-                10, 0.2, 0.2, 0.2, 0.01
-            );
-
-            // Play impact sound
-            server.playSound(null, this.blockPosition(), SoundEvents.SOUL_ESCAPE, SoundSource.NEUTRAL, 1.2F,
-                    0.7F + server.random.nextFloat() * 0.3F);
-            server.playSound(null, this.blockPosition(), SoundEvents.GLASS_BREAK, SoundSource.NEUTRAL, 1.0F,
-                    0.9F + server.random.nextFloat() * 0.2F);
+            this.level().addFreshEntity(cloud);
+            this.level().broadcastEntityEvent(this, (byte) 3);
+            this.discard();
         }
-
-        level().broadcastEntityEvent(this, (byte) 3);
-        discard();
     }
 
     @Override

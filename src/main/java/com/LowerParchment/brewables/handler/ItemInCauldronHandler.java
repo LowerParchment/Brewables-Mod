@@ -17,6 +17,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CauldronBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -204,5 +205,21 @@ public class ItemInCauldronHandler
                 }
             }
         }
+    }
+
+    // Helper method to check if a specific item is contained in the cauldron at a given position.
+    public static boolean contains(BlockPos pos, Item target)
+    {
+        List<ItemStack> items = ingredientsByCauldron.get(pos);
+        if (items == null) return false;
+
+        for (ItemStack stack : items)
+        {
+            if (stack.getItem() == target)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -2,8 +2,8 @@
     "itemGroup.brewables.brewables_tab": "Brewables",
     "item.brewables.stirring_rod": "Stirring Rod",
     "item.brewables.witchs_wart": "Witch's Wart",
-    "item.brewables.splash_witchs_wart": "Splash Witch's Wart",
-    "item.brewables.lingering_witchs_wart": "Lingering Witch's Wart",
+    "item.brewables.splash_witchs_wart": "Splash Potion of Witch’s Wart",
+    "item.brewables.lingering_witchs_wart": "Lingering Potion of Witch’s Wart",
     "item.brewables.witchs_wart.tooltip": "A cursed brew. I shouldn't drink this... probably.",
     "block.brewables.brew_cauldron": "Brew Cauldron"
 }
