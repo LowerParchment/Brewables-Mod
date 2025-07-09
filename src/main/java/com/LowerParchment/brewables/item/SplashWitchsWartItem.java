@@ -16,19 +16,25 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nullable;
 import java.util.List;
 
+// Represents the throwable splash version of Witch's Wart.
+// Behaves like a splash potion with randomized negative effects when thrown.
 public class SplashWitchsWartItem extends Item
 {
-    public SplashWitchsWartItem(Properties properties)
+    // Constructor for splash Witch's Wart item.
+    // Allows it to be registered via lambda and enforces 16 max stack size for player convenience.
+    public SplashWitchsWartItem()
     {
         super(new Item.Properties().stacksTo(16));
     }
 
+    // Defines the localized name to appear in-game
     @Override
     public Component getName(ItemStack stack)
     {
         return Component.translatable("item.brewables.splash_witchs_wart");
     }
 
+    // Adds tooltip lore for the item when hovered over in inventory or hotbar
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag)
     {
@@ -36,20 +42,23 @@ public class SplashWitchsWartItem extends Item
             .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.ITALIC));
     }
 
+    // Called when the player right-clicks with the item
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player user, InteractionHand hand)
     {
         ItemStack stack = user.getItemInHand(hand);
 
+        // Play a muted throwing sound on the client side only
         if (level.isClientSide)
         {
             user.playSound(
                     SoundEvents.SPLASH_POTION_THROW,
                     1.0F,
-                    0.5F + level.random.nextFloat() * 0.1F // vanilla = lower, muted
+                    0.5F + level.random.nextFloat() * 0.1F
             );
         }
 
+        // Spawn the thrown entity server-side only
         if (!level.isClientSide)
         {
             ThrownWitchsWartEntity projectile = new ThrownWitchsWartEntity(level, user);
@@ -58,6 +67,7 @@ public class SplashWitchsWartItem extends Item
             level.addFreshEntity(projectile);
         }
 
+        // Consume the item unless the player is in Creative mode
         if (!user.getAbilities().instabuild)
         {
             stack.shrink(1);

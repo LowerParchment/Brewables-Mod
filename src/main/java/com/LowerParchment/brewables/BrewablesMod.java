@@ -1,4 +1,4 @@
-// Import self-created package declaration
+// Import user defined dependencies
 package com.LowerParchment.brewables;
 import com.LowerParchment.brewables.item.StirringRodItem;
 import com.LowerParchment.brewables.item.WitchsWartItem;
@@ -6,7 +6,7 @@ import com.LowerParchment.brewables.item.SplashWitchsWartItem;
 import com.LowerParchment.brewables.item.LingeringWitchsWartItem;
 import com.LowerParchment.brewables.block.BrewCauldronBlock;
 
-// Import dependencies and classes
+// Import Minecraft, Forge, and Java dependencies
 import com.mojang.logging.LogUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
@@ -36,41 +36,30 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 
-
-// BrewablesMod class definition
+// Main class and entrypoint for the Brewables mod
 @Mod(BrewablesMod.MODID)
 public class BrewablesMod
 {
-    // Mod ID and logger
+    // Global mod ID and logger
     public static final String MODID = "brewables";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // Deferred registers for items
+    // Registers for items, blocks, and creative tab
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
-    // ... and creative tabs
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    // Registering the Stirring Rod item
-    public static final RegistryObject<Item> STIRRING_ROD = ITEMS.register("stirring_rod",
-        () -> new StirringRodItem(new Item.Properties()));
-
-    // Witch's Wart - drinkable (default)
+    // --- Item registrations ---
+    public static final RegistryObject<Item> STIRRING_ROD = ITEMS.register("stirring_rod", () -> new StirringRodItem(new Item.Properties()));
     public static final RegistryObject<Item> WITCHS_WART_DRINKABLE = ITEMS.register("witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(16)));
-
-    // Witch's Wart - splash
-    public static final RegistryObject<Item> SPLASH_WITCHS_WART = ITEMS.register("splash_witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(16)));
-
-    // Witch's Wart - lingering
+    public static final RegistryObject<Item> SPLASH_WITCHS_WART = ITEMS.register("splash_witchs_wart", SplashWitchsWartItem::new);
     public static final RegistryObject<Item> LINGERING_WITCHS_WART = ITEMS.register("lingering_witchs_wart", LingeringWitchsWartItem::new);
 
-    // Registering the Brew Cauldron block, and its corresponding item
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
-    public static final RegistryObject<Block> BREW_CAULDRON = BLOCKS.register("brew_cauldron", () ->
-        new BrewCauldronBlock(BlockBehaviour.Properties.copy(Blocks.WATER_CAULDRON)));
-    public static final RegistryObject<Item> BREW_CAULDRON_ITEM = ITEMS.register("brew_cauldron", () ->
-        new BlockItem(BREW_CAULDRON.get(), new Item.Properties()));
+    // --- Block registrations ---
+    public static final RegistryObject<Block> BREW_CAULDRON = BLOCKS.register("brew_cauldron", () -> new BrewCauldronBlock(BlockBehaviour.Properties.copy(Blocks.WATER_CAULDRON)));
+    public static final RegistryObject<Item> BREW_CAULDRON_ITEM = ITEMS.register("brew_cauldron", () -> new BlockItem(BREW_CAULDRON.get(), new Item.Properties()));
 
-    // Registering the Brewables Creative Mode Tab
+    // --- Creative Tab registration ---
     public static final RegistryObject<CreativeModeTab> BREWABLES_TAB = CREATIVE_TABS.register("brewables_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.brewables.brewables_tab"))
@@ -88,10 +77,10 @@ public class BrewablesMod
                         output.accept(LINGERING_WITCHS_WART.get());
                     }).build());
 
-    // Integer property for the water level of the cauldron
+    // Property for tracking cauldron fluid levels (used in blockstate)
     public static final IntegerProperty LEVEL = IntegerProperty.create("level", 0, 3);
 
-    // Constructor to initialize the mod
+    // --- Constructor and Event Registration ---
     public BrewablesMod()
     {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -104,13 +93,13 @@ public class BrewablesMod
         modEventBus.addListener(this::addToCreativeTab);
     }
 
-    // Common setup method for the mod
+    // Lifecycle method called during mod loading
     private void commonSetup(final FMLCommonSetupEvent event)
     {
         LOGGER.info("Brewables Mod Loaded!");
     }
 
-    // Method to add items to the Brewables creative tab
+    // Re-adds items to the tab in case another mod interferes with tab contents
     private void addToCreativeTab(BuildCreativeModeTabContentsEvent event)
     {
         if (event.getTab() == BREWABLES_TAB.get())
@@ -119,14 +108,14 @@ public class BrewablesMod
         }
     }
 
-    // Event handler for server starting
+    // Fired when the server begins loading
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event)
     {
         LOGGER.info("Server is starting up with Brewables loaded.");
     }
 
-    // Client-side setup for the mod
+    // --- Client-side setup and renderer registration ---
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents
     {
