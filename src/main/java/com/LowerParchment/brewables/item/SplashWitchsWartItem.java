@@ -21,7 +21,7 @@ public class SplashWitchsWartItem extends Item
 {
     public SplashWitchsWartItem(Properties properties)
     {
-        super(properties);
+        super(new Item.Properties().stacksTo(16));
     }
 
     @Override

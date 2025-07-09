@@ -1,7 +1,7 @@
 {
     "variants": 
     {
-        "color=clear,level=0,brew_state=empty": {"model": "minecraft:block/cauldron"},
+        "color=clear,level=0,brew_state=empty": {"model": "brewables:block/brew_cauldron_empty"},
         "color=clear,level=1,brew_state=empty": {"model": "brewables:block/brew_cauldron_clear_1"},
         "color=clear,level=2,brew_state=empty": {"model": "brewables:block/brew_cauldron_clear_2"},
         "color=clear,level=3,brew_state=empty": {"model": "brewables:block/brew_cauldron_clear_3"},

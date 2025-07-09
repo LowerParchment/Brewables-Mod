@@ -19,7 +19,7 @@ public class LingeringWitchsWartItem extends Item
 {
     public LingeringWitchsWartItem(Properties properties)
     {
-        super(properties);
+        super(new Item.Properties().stacksTo(16));
     }
 
     @Override

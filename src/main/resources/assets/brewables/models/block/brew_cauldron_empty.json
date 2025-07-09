@@ -1,9 +1,8 @@
 {
     "parent": "minecraft:block/cauldron",
     "textures": {
-        "particle": "minecraft:block/cauldron_side",
-        "bottom": "minecraft:block/cauldron_bottom",
-        "top": "minecraft:block/cauldron_top",
-        "side": "minecraft:block/cauldron_side"
+        "top": "brewables:block/brew_cauldron_top",
+        "side": "brewables:block/brew_cauldron_side",
+        "bottom": "brewables:block/brew_cauldron_bottom"
     }
 }

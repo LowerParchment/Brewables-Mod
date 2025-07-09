@@ -9,6 +9,7 @@ import com.LowerParchment.brewables.block.BrewCauldronBlock;
 // Import dependencies and classes
 import com.mojang.logging.LogUtils;
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -56,10 +58,10 @@ public class BrewablesMod
     public static final RegistryObject<Item> WITCHS_WART_DRINKABLE = ITEMS.register("witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(16)));
 
     // Witch's Wart - splash
-    public static final RegistryObject<Item> SPLASH_WITCHS_WART = ITEMS.register("splash_witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> SPLASH_WITCHS_WART = ITEMS.register("splash_witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(16)));
 
     // Witch's Wart - lingering
-    public static final RegistryObject<Item> LINGERING_WITCHS_WART = ITEMS.register("lingering_witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> LINGERING_WITCHS_WART = ITEMS.register("lingering_witchs_wart", () -> new LingeringWitchsWartItem(new Item.Properties().stacksTo(16)));
 
     // Registering the Brew Cauldron block, and its corresponding item
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
@@ -132,6 +134,20 @@ public class BrewablesMod
         public static void onClientSetup(FMLClientSetupEvent event)
         {
             LogUtils.getLogger().info("Client-side setup complete.");
+        }
+
+        @SubscribeEvent
+        public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event)
+        {
+            event.registerEntityRenderer(
+                ModEntities.THROWN_WITCHS_WART_ENTITY.get(),
+                context -> new ThrownItemRenderer<>(context)
+            );
+
+            event.registerEntityRenderer(
+                ModEntities.THROWN_LINGERING_WITCHS_WART_ENTITY.get(),
+                context -> new ThrownItemRenderer<>(context)
+            );
         }
     }
 }

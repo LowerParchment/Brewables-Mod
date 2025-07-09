@@ -2,10 +2,10 @@
   "parent": "minecraft:block/template_cauldron_level1",
   "textures": {
     "particle": "brewables:block/water_still",
-    "top": "minecraft:block/cauldron_top",
+    "top": "brewables:block/brew_cauldron_top",
     "content": "brewables:block/water_breathing_still",
-    "side": "minecraft:block/cauldron_side",
-    "bottom": "minecraft:block/cauldron_bottom",
+    "side": "brewables:block/brew_cauldron_side",
+    "bottom": "brewables:block/brew_cauldron_bottom",
     "overlay": "brewables:block/overlay/clear"
   }
 }

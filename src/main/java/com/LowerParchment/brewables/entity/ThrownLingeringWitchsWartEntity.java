@@ -47,31 +47,32 @@ public class ThrownLingeringWitchsWartEntity extends ThrowableItemProjectile
 
         if (!this.level().isClientSide())
         {
-            // Get actual effects
-            ItemStack stack = this.getItem();
-            List<MobEffectInstance> effects = PotionUtils.getMobEffects(stack);
+            ServerLevel server = (ServerLevel) this.level();
 
-            // Create lingering cloud like vanilla
-            AreaEffectCloud cloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
+            // Create the area effect cloud
+            AreaEffectCloud cloud = new AreaEffectCloud(server, this.getX(), this.getY(), this.getZ());
             if (this.getOwner() instanceof LivingEntity living)
             {
                 cloud.setOwner(living);
             }
+
             cloud.setRadius(3.0F);
             cloud.setRadiusOnUse(-0.5F);
             cloud.setWaitTime(10);
-            cloud.setDuration(200);
-            cloud.setRadiusPerTick(-0.03F);
-            
-            cloud.setPotion(Potions.WATER);
+            cloud.setDuration(600);
+            cloud.setRadiusPerTick(-0.005F);
             cloud.setParticle(ParticleTypes.WITCH);
 
-            for (MobEffectInstance effect : effects)
-            {
-                cloud.addEffect(new MobEffectInstance(effect));
-            }
+            // Get and apply a random wart effect
+            MobEffectInstance wartEffect = WitchsWartItem.getRandomEffectStatic();
+            cloud.addEffect(wartEffect);
 
-            this.level().addFreshEntity(cloud);
+            // Add cloud and finish
+            server.addFreshEntity(cloud);
+            server.playSound(null, this.blockPosition(), SoundEvents.SOUL_ESCAPE, SoundSource.NEUTRAL, 1.0F, 0.8F);
+            server.playSound(null, this.blockPosition(), SoundEvents.GLASS_BREAK, SoundSource.NEUTRAL, 0.8F, 1.0F);
+            server.sendParticles(ParticleTypes.SOUL, this.getX(), this.getY(), this.getZ(), 10, 0.2, 0.2, 0.2, 0.01);
+
             this.level().broadcastEntityEvent(this, (byte) 3);
             this.discard();
         }
