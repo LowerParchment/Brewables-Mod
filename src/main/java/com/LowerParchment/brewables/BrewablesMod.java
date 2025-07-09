@@ -61,7 +61,7 @@ public class BrewablesMod
     public static final RegistryObject<Item> SPLASH_WITCHS_WART = ITEMS.register("splash_witchs_wart", () -> new WitchsWartItem(new Item.Properties().stacksTo(16)));
 
     // Witch's Wart - lingering
-    public static final RegistryObject<Item> LINGERING_WITCHS_WART = ITEMS.register("lingering_witchs_wart", () -> new LingeringWitchsWartItem(new Item.Properties().stacksTo(16)));
+    public static final RegistryObject<Item> LINGERING_WITCHS_WART = ITEMS.register("lingering_witchs_wart", LingeringWitchsWartItem::new);
 
     // Registering the Brew Cauldron block, and its corresponding item
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);

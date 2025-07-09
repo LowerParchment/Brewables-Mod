@@ -1,4 +1,4 @@
-// Importing necessary packages for the event handler in Minecraft Forge modding.
+// Import user defined dependencies
 package com.LowerParchment.brewables.event;
 import com.LowerParchment.brewables.BrewablesMod;
 import com.LowerParchment.brewables.block.BrewCauldronBlock;
@@ -9,10 +9,8 @@ import com.LowerParchment.brewables.item.WitchsWartItem;
 import com.LowerParchment.brewables.handler.BrewRecipeRegistry;
 import com.LowerParchment.brewables.handler.BrewRecipeRegistry.BrewResult;
 
-// Java Utilities imports
+// Import Minecraft, Forge, and Java dependencies
 import java.util.*;
-
-// Minecraft Forge imports
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.InteractionHand;
@@ -37,7 +35,7 @@ import net.minecraft.sounds.SoundSource;
 @Mod.EventBusSubscriber(modid = BrewablesMod.MODID)
 public class RightClickHandler
 {
-    // Class available declarations
+    // Shared data for interaction tracking and ingredient memory
     private static final Map<BlockPos, Long> lastUseTime = new HashMap<>();
     private static final long LOCKOUT_MS = 100;
 
@@ -61,26 +59,23 @@ public class RightClickHandler
         // Ignore client-side event entirely
         if (level.isClientSide) return;
 
-        // Determine the action based on the held item
+        // Detect context-specific cauldron interaction based on held item
         String actionForSwitchCase;
-        if (heldItem.is(Items.WATER_BUCKET))    // Water Bucket
+        if (heldItem.is(Items.WATER_BUCKET))
         {
             actionForSwitchCase = "REFILL";
         }
-        else if (heldItem.is(Items.GLASS_BOTTLE))   // Glass Bottle
+        else if (heldItem.is(Items.GLASS_BOTTLE))
         {
             actionForSwitchCase = "BOTTLE";
         }
-        else if (heldItem.getItem().getDescriptionId().equals("item.brewables.stirring_rod"))   // Stirring Rod
+        else if (heldItem.getItem().getDescriptionId().equals("item.brewables.stirring_rod"))
         {
             actionForSwitchCase = "STIRRING_ROD";
         }
-        else
-        {
-            actionForSwitchCase = "NONE";
-        }
+        else actionForSwitchCase = "NONE";
 
-        // Guard: Don't do anything if the right click isn't on a Brew Cauldron Block
+        // Guard: Only proceed if the block is our custom brew cauldron
         if (block != BrewablesMod.BREW_CAULDRON.get()) return;
 
         // Switch case to handle different actions based on the held item
@@ -116,7 +111,7 @@ public class RightClickHandler
                     // Display a message to the player confirming the refill
                     player.displayClientMessage(Component.literal("[Water Bucket] You refilled the cauldron with water."), true);
 
-                    // Cancel the event to prevent default behavior of double right-clicking
+                    // Cancel the event to prevent vanilla right-clicking behavior (e.g. water bucket placing)
                     event.setCanceled(true);
                     event.setCancellationResult(InteractionResult.SUCCESS);
                 }
@@ -202,7 +197,8 @@ public class RightClickHandler
                     result = BrewRecipeRegistry.createPotionStack(finalPotion, isSplash, isLingering);
                 }
 
-                if (heldItem.getCount() >= 1)
+                // Check if the player has at least one glass bottle in their inventory
+                if (!heldItem.isEmpty())
                 {
                     // Give 1 potion
                     ItemStack potionCopy = result.copy();
@@ -215,7 +211,6 @@ public class RightClickHandler
                     // Decrement the cauldron's level/doses
                     int currentLevel = state.getValue(BrewCauldronBlock.LEVEL);
                     int newLevel = currentLevel - 1;
-
                     if (newLevel > 0)
                     {
                         // Update block state to show reduced level
@@ -223,6 +218,7 @@ public class RightClickHandler
                         level.setBlock(pos, newState, Block.UPDATE_ALL);
                         level.sendBlockUpdated(pos, state, newState, Block.UPDATE_ALL);
 
+                        // Set the new dose level in the tracker
                         CauldronStateTracker.setDoses(pos, newLevel);
                     }
                     else
@@ -232,10 +228,10 @@ public class RightClickHandler
                                 .setValue(BrewCauldronBlock.LEVEL, 0)
                                 .setValue(BrewCauldronBlock.COLOR, BrewColorType.CLEAR)
                                 .setValue(BrewCauldronBlock.BREW_STATE, CauldronBrewState.EMPTY);
-
                         level.setBlock(pos, newState, Block.UPDATE_ALL);
                         level.sendBlockUpdated(pos, state, newState, Block.UPDATE_ALL);
 
+                        // Reset the brew state tracker and clear ingredients
                         CauldronStateTracker.reset(pos);
                         ItemInCauldronHandler.clearIngredients(pos);
                     }
@@ -247,10 +243,11 @@ public class RightClickHandler
                 }
                 else
                 {
-                    // Not enough bottles → inform player
-                    player.displayClientMessage(Component.literal("You need 3 glass bottles to retrieve all doses!"), true);
+                    // If the player has no glass bottles, show a message
+                    player.displayClientMessage(Component.literal("You need at least 1 glass bottle to retrieve a dose."), true);
                 }
 
+                // Case Finished
                 break;
             }
 
@@ -330,7 +327,6 @@ public class RightClickHandler
                     CauldronStateTracker.setDoses(pos, updatedLevel);
                     CauldronStateTracker.setResult(pos,
                     new BrewRecipeRegistry.BrewResult(finalPotion, data.useGlowstone(), data.useRedstone(), data.useGunpowder(), data.useDragonBreath()));
-
                     player.displayClientMessage(Component.literal("Successful brew! You made a potion."), true);
 
                     // Update the block state
@@ -379,6 +375,7 @@ public class RightClickHandler
                                 0.05);
                     }
 
+                    // Inform the player that they brewed a Witch's Wart
                     player.displayClientMessage(Component.literal("Witch’s Wart brewed. That can't be right..."), true);
 
                     // Wart brew is ready, so set it's disgusting properties
@@ -389,11 +386,10 @@ public class RightClickHandler
                     boolean hasGunpowder = ItemInCauldronHandler.contains(pos, Items.GUNPOWDER);
                     boolean hasDragonBreath = ItemInCauldronHandler.contains(pos, Items.DRAGON_BREATH);
 
-                    CauldronStateTracker.setResult(pos,
-                        new BrewResult(Potions.WATER, false, false, hasGunpowder, hasDragonBreath));
+                    // Set the result for the cauldron state tracker
+                    CauldronStateTracker.setResult(pos, new BrewResult(Potions.WATER, false, false, hasGunpowder, hasDragonBreath));
 
-
-                    // Update the block state
+                    // Update the block state to reflect the failed brew
                     BlockState wartState = state
                             .setValue(BrewCauldronBlock.LEVEL,
                                     updatedLevel)
@@ -419,11 +415,8 @@ public class RightClickHandler
                 // Case Finished
                 break;
             }
-            // Any other possible interaction
-            default:
-            {
-                break;
-            }
+            // Any other possible interaction in the switch case
+            default: break;
         }
     }
 }

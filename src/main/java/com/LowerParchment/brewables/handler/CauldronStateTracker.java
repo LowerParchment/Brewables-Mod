@@ -1,13 +1,17 @@
-// Importing necessary packages for the event handler in Minecraft Forge modding.
+// Import user defined dependencies
 package com.LowerParchment.brewables.handler;
 import com.LowerParchment.brewables.event.CauldronBrewState;
 import com.LowerParchment.brewables.handler.BrewRecipeRegistry.BrewResult;
 
+// Import Minecraft and Java dependencies
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 
-// This class tracks the state of cauldrons in the game, including their brew states and remaining doses.
+/// Tracks cauldron states including:
+// - Brew phase (empty, base_ready, brew_ready, failed)
+// - Dose count (remaining potions extractable)
+// - BrewResult metadata (potion output + modifiers)
 public class CauldronStateTracker
 {
     private static final Map<BlockPos, CauldronBrewState> brewStates = new HashMap<>();
@@ -21,8 +25,9 @@ public class CauldronStateTracker
         return brewStates.getOrDefault(pos, CauldronBrewState.EMPTY);
     }
 
-    // Get all tracked cauldron states
-    public static Map<BlockPos, CauldronBrewState> getAllTrackedStates() {
+    // Returns full map of all tracked cauldron brew states (for debugging or sync)
+    public static Map<BlockPos, CauldronBrewState> getAllTrackedStates()
+    {
         return brewStates;
     }
 
@@ -33,7 +38,7 @@ public class CauldronStateTracker
         brewStates.put(pos.immutable(), state);
     }
 
-    // Remove tracking for a cauldron (e.g., when drained or broken)
+    // Removes all tracking info for a cauldron (called when broken or fully emptied)
     public static void reset(BlockPos pos)
     {
         BlockPos immutablePos = pos.immutable();
@@ -57,7 +62,7 @@ public class CauldronStateTracker
         return doseCounts.getOrDefault(pos, 0);
     }
 
-    // Decrement doses by one (min 0)
+    // Decreases potion dose count by 1, clamps at 0
     public static void decrementDoses(BlockPos pos)
     {
         pos = pos.immutable();
@@ -87,7 +92,7 @@ public class CauldronStateTracker
         return brewResults.get(pos);
     }
 
-    // Clear the result of a brewing process for a cauldron
+    // Removes stored BrewResult without touching dose or state
     public static void clearResult(BlockPos pos)
     {
         brewResults.remove(pos);

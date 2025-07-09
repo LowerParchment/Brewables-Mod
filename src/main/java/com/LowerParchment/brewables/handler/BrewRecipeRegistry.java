@@ -1,16 +1,15 @@
-// Importing necessary packages for the event handler in Minecraft Forge modding.
+// Import user defined dependencies
 package com.LowerParchment.brewables.handler;
+import com.LowerParchment.brewables.block.BrewColorType;
 
+// Import Minecraft, Forge, and Java dependencies
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.ItemStack;
-
 import java.util.*;
-
-import com.LowerParchment.brewables.block.BrewColorType;
 
 public class BrewRecipeRegistry
 {
@@ -20,7 +19,7 @@ public class BrewRecipeRegistry
     // Define a map to hold brewing recipes
     private static final Map<List<Item>, Potion> RECIPE_MAP = new HashMap<>();
 
-    // Helper method to create a potion stack based on the potion type and whether it is splash or lingering.
+    // Returns the correct potion ItemStack depending on splash/lingering flags
     public static ItemStack createPotionStack(Potion potion, boolean isSplash, boolean isLingering)
     {
         Item baseItem = isLingering
@@ -52,16 +51,13 @@ public class BrewRecipeRegistry
         return potion;
     }
 
-    // Method to apply modifiers to a base potion based on the presence of Glowstone, Redstone dust, or Dragon's Breath.
+    // Method to apply modifiers to a base potion based on the presence of Glowstone or Redstone dust
     public static Potion applyModifiers(Potion base, boolean useGlowstone, boolean useRedstone)
     {
-        if (useGlowstone && useRedstone)
-        {
-            // Both modifiers together are invalid in vanilla – return base or null to trigger failure
-            System.out.println("[WARN] Both Glowstone and Redstone present – invalid combo.");
-            return base;
-        }
+        // Vanilla considers glowstone + redstone invalid — return base potion unchanged
+        if (useGlowstone && useRedstone) return base;
     
+        // The player used glowstone, redstone to modify the potion
         if (useGlowstone)
         {
             if (base == Potions.SWIFTNESS) return Potions.STRONG_SWIFTNESS;
@@ -73,7 +69,6 @@ public class BrewRecipeRegistry
             if (base == Potions.SLOWNESS) return Potions.STRONG_SLOWNESS;
             if (base == Potions.TURTLE_MASTER) return Potions.STRONG_TURTLE_MASTER;
         }
-    
         if (useRedstone)
         {
             if (base == Potions.SWIFTNESS) return Potions.LONG_SWIFTNESS;
@@ -136,11 +131,11 @@ public class BrewRecipeRegistry
         if (base == Potions.SLOW_FALLING) return BrewColorType.SLOW_FALLING;
         if (base == Potions.WEAKNESS) return BrewColorType.WEAKNESS;
 
-        // Default fallback
+        // Return black color type for unknown or invalid potion
         return BrewColorType.WART;
     }
 
-    // Method to increase effect duration or effectiveness
+    // Matches input ingredients against known recipes and detects valid modifiers
     public static Optional<BrewResult> match(List<ItemStack> ingredients)
     {
         List<Item> baseIngredients = new ArrayList<>();
@@ -159,7 +154,7 @@ public class BrewRecipeRegistry
             else baseIngredients.add(item);
         }
 
-        // Sort for consistent matching
+        // Sort ingredients by description ID to ensure deterministic matching
         baseIngredients.sort(Comparator.comparing(Item::getDescriptionId));
 
         for (Map.Entry<List<Item>, Potion> entry : RECIPE_MAP.entrySet())

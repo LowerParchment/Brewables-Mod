@@ -30,7 +30,7 @@ public class ThrownLingeringWitchsWartEntity extends ThrowableItemProjectile
         super(type, level);
     }
 
-    // Constructor for the entity when thrown by a LivingEntity (like a player).
+    // Constructor for the entity when thrown by a LivingEntity (like a player)
     public ThrownLingeringWitchsWartEntity(Level level, LivingEntity thrower)
     {
         super(ModEntities.THROWN_LINGERING_WITCHS_WART_ENTITY.get(), thrower, level);
