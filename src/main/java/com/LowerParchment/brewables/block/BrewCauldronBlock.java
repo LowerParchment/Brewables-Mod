@@ -23,10 +23,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 
-// Class that handles the Brew Cauldron block, extending the functionality of the vanilla CauldronBlock.
+// Class that handles the Brew Cauldron block, extending the functionality of the vanilla CauldronBlock
 public class BrewCauldronBlock extends CauldronBlock
 {
-    // BlockState properties controlling brew behavior, water color, and fluid level.
+    // BlockState properties controlling brew behavior, water color, and fluid level
     public static final EnumProperty<CauldronBrewState> BREW_STATE = EnumProperty.create("brew_state", CauldronBrewState.class);
     public static final EnumProperty<BrewColorType> COLOR = EnumProperty.create("color", BrewColorType.class);
     public static final IntegerProperty LEVEL = IntegerProperty.create("level", 0, 3);
@@ -34,7 +34,7 @@ public class BrewCauldronBlock extends CauldronBlock
     // Variable to prevent sound muddying
     private long lastSoundTime = 0;
 
-    // Constructor for the BrewCauldronBlock class, setting the default state to clear color.
+    // Constructor for the BrewCauldronBlock class, setting the default state to clear color
     public BrewCauldronBlock(Properties properties)
     {
         super(properties);
@@ -46,7 +46,7 @@ public class BrewCauldronBlock extends CauldronBlock
         .setValue(BREW_STATE, CauldronBrewState.EMPTY));
     }
 
-    // Define the state of the block, including its properties.
+    // Define the state of the block, including its properties
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder)
     {
@@ -54,14 +54,14 @@ public class BrewCauldronBlock extends CauldronBlock
         builder.add(LEVEL, COLOR, BREW_STATE);
     }
 
-    // Handle instantiation of the block, setting its initial state.
+    // Handle instantiation of the block, setting its initial state
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving)
     {
         super.onPlace(state, level, pos, oldState, isMoving);
     }
 
-    // Handle the removal of the block, clearing any stored data if the block is replaced.
+    // Handle the removal of the block, clearing any stored data if the block is replaced
     @Override
     public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState, boolean isMoving)
     {
@@ -70,7 +70,7 @@ public class BrewCauldronBlock extends CauldronBlock
         // Only act if the level is server-side
         if (!level.isClientSide)
         {
-            // If the cauldron was replaced by a different block, clear stored data.
+            // If the cauldron was replaced by a different block, clear stored data
             if (oldState.getBlock() != newState.getBlock())
             {
                 // Clear the data associated with the cauldron
@@ -80,7 +80,7 @@ public class BrewCauldronBlock extends CauldronBlock
         }
     }
 
-    // Update the block state when it is placed or changed, ensuring the cauldron's properties are correctly set.
+    // Update the block state when it is placed or changed, ensuring the cauldron's properties are correctly set
     @Override
     public BlockState updateShape(BlockState state, net.minecraft.core.Direction dir, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos)
     {
@@ -92,7 +92,7 @@ public class BrewCauldronBlock extends CauldronBlock
         return super.updateShape(state, dir, neighborState, level, pos, neighborPos);
     }
 
-    // Animate tick method to show appropriate particles when conditions are met: Campfire is underneath and cauldron is not empty.
+    // Animate tick method to show appropriate particles when conditions are met: Campfire is underneath and cauldron is not empty
     @Override
     @OnlyIn(Dist.CLIENT)
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random)
@@ -133,7 +133,7 @@ public class BrewCauldronBlock extends CauldronBlock
             level.addParticle(ParticleTypes.BUBBLE_POP, x, y, z, 0.0D, 0.02D, 0.0D);
         }
 
-        // Play the lava ambient sound near constantly, but not too frequently.
+        // Play the lava ambient sound near constantly, but not too frequently
         if (level.getGameTime() - lastSoundTime > 5 && random.nextFloat() < 0.95F)
         {
             lastSoundTime = level.getGameTime();
@@ -149,7 +149,7 @@ public class BrewCauldronBlock extends CauldronBlock
         }
     }
 
-    // Scheduled tick logic to reset a cauldron block to its default state.
+    // Scheduled tick logic to reset a cauldron block to its default state
     public void tick(BlockState state, net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.util.RandomSource random)
     {
         // Only act server-side

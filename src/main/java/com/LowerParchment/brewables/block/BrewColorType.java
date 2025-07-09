@@ -1,8 +1,11 @@
-// Importing necessary packages for the event handler in Minecraft Forge modding.
+// Import user defined dependencies
 package com.LowerParchment.brewables.block;
 
+// Import Minecraft dependencies
 import net.minecraft.util.StringRepresentable;
 
+// Enum for representing cauldron brew color states.
+// Used in blockstates to control cauldron tinting and texture selection.
 public enum BrewColorType implements StringRepresentable
 {
     CLEAR("clear"),
@@ -24,19 +27,23 @@ public enum BrewColorType implements StringRepresentable
     WEAKNESS("weakness"),
     WART("wart");
 
+    // Name of the brew color type used for serialization.
     private final String name;
 
+    // Associates each enum constant with its string representation.
     BrewColorType(String name)
     {
         this.name = name;
     }
 
+    // Serialized name used for JSON and blockstate matching.
     @Override
     public String getSerializedName()
     {
         return name;
     }
 
+    // Converts the enum to its string representation.
     @Override
     public String toString()
     {
